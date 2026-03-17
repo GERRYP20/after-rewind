@@ -1,65 +1,90 @@
-import Image from "next/image";
+import React from "react";
+import Link from "next/link";
+import styles from "@/components/layout/PublicHeder.module.css";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className={styles.mainWrapper}>
+      {/* 1. SECCIÓN HERO */}
+      <section className={styles.hero}>
+        <div className={styles.heroContent}>
+          <h1>
+            Captura la <span className={styles.highlight}>Esencia</span><br />
+            de cada instante
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className={styles.heroSub}>
+            AFTER-REWIND es la plataforma premium para gestionar eventos
+            exclusivos y crear memorias visuales inolvidables.
+          </p>
+          <div className={styles.heroButtons}>
+            <Link href="#" className={styles.btnPrimary}>EMPEZAR AHORA</Link>
+            <Link href="#" className={styles.btnSecondary}>VER DEMO</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. SECCIÓN DETALLES / STATS */}
+      <section id="section2" className={styles.second}>
+        <div className={styles.heroContent2}>
+          <h1>Excelencia en <span className={styles.highlight}>Detalles</span></h1>
+          <p className={styles.heroSub2}>
+            Desde la planificación hasta la ejecución, AFTER-REWIND se encarga
+            de cada detalle para que tu evento sea perfecto.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className={styles.stats}>
+          <div className={styles.stat}>
+            <div className={styles.statNum}>10k</div>
+            <div className={styles.statLabel}>Eventos Organizados con nosotros</div>
+          </div>
+          <div className={styles.stat}>
+            <div className={styles.statNum}>500K+</div>
+            <div className={styles.statLabel}>Fotos Compartidas</div>
+          </div>
+          <div className={styles.stat}>
+            <div className={styles.statNum}>4.9/5</div>
+            <div className={styles.statLabel}>Valoración de Usuarios</div>
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* 3. SECCIÓN CÓMO FUNCIONA */}
+      <section className={styles.steps}>
+        <div className={styles.container}>
+          <h2 className={styles.stepsTitle}>Cómo funciona</h2>
+          <div className={styles.stepsGrid}>
+            <div className={styles.effect}>
+              <span>01</span>
+              <h3>Crea tu evento</h3>
+              <p>Configura tu evento en segundos.</p>
+            </div>
+            <div className={styles.effect}>
+              <span>02</span>
+              <h3>Invita amigos</h3>
+              <p>Comparte el acceso con quien quieras.</p>
+            </div>
+            <div className={styles.effect}>
+              <span>03</span>
+              <h3>Guarda recuerdos</h3>
+              <p>Todos pueden subir fotos.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. SECCIÓN CTA FINAL */}
+      <section className={styles.cta}>
+        <div className={styles.ctaContainer}>
+          <div className={styles.ctaText}>
+            <h2>Todo gran recuerdo comienza con un momento</h2>
+            <p>
+              Crea eventos, invita a tus amigos y construyan juntos una
+              colección de recuerdos que durarán para siempre.
+            </p>
+          </div>
+          <Link href="#registro" className={styles.ctaButton}>Registrarse gratis</Link>
+        </div>
+      </section>
+    </main>
   );
 }
