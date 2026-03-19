@@ -12,12 +12,12 @@ function PublicHeder() {
           <span className={styles.tagline}>AFTER-REWIND</span>
         </Link>
         <ul className={styles.navLinks}>
-          <li><Link href="#">Inicio</Link></li>
+          <li><Link href="/dashboard">Inicio</Link></li>
           <li><Link href="#">Crear Evento</Link></li>
           <li><Link href="#">Mis Eventos</Link></li>
           <li><Link href="#">Invitaciones</Link></li>
         </ul>
-        <Link href="#" className={styles.navCta}>INICIAR SESIÓN</Link>
+        <Link href="/login" className={styles.navCta}>INICIAR SESIÓN</Link>
       </nav>
     </header>
   );
