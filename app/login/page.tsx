@@ -1,24 +1,56 @@
 "use client";
+
 import PublicHeder from "@/components/layout/PublicHeder";
 import React, { useState } from "react";
 import Link from "next/link"; 
+// Importamos la configuración de Firebase y las funciones necesarias
+import { auth, configureAuthPersistence } from "@/lib/firebase-client";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Añadimos el estado para la persistencia (Recordarme) como en el proyecto de referencia
+  const [remember, setRemember] = useState(true);
   
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // Función para manejar el inicio de sesión con Firebase
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      // Configuramos si la sesión persiste al cerrar el navegador
+      await configureAuthPersistence(remember);
+      // Intentamos la autenticación
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Sesión iniciada:", cred.user);
+      alert("¡Bienvenido!");
+    } catch (error: unknown) {
+      setErr("El correo o la contraseña son incorrectos.");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
+  };
+
+  // Función para el botón de Google
+  const handleGoogleLogin = async () => {
+    setErr(null);
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      await configureAuthPersistence(remember);
+      const result = await signInWithPopup(auth, provider);
+      console.log("Usuario de Google:", result.user);
+    } catch (error:unknown) {
+      setErr("Error al conectar con Google.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -95,6 +127,18 @@ function Login() {
                   </div>
                 </div>
 
+                {/* Checkbox para recordar sesión */}
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    id="remember"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="rounded border-neutral-700 bg-neutral-800 text-amber-400"
+                  />
+                  <label htmlFor="remember" className="text-sm text-neutral-400">Recordarme</label>
+                </div>
+
                 {/* Sección: Mensaje de error */}
                 {err && (
                   <p className="text-sm text-red-400 bg-red-900/20 p-2 rounded">
@@ -122,6 +166,7 @@ function Login() {
               {/* Botón de inicio de sesión con Google */}
               <button
                 type="button"
+                onClick={handleGoogleLogin}
                 disabled={loading}
                 className="w-full border border-neutral-700 rounded bg-neutral-800 hover:bg-neutral-700 text-white py-2 flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
               >

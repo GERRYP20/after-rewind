@@ -82,7 +82,7 @@ export default function Home() {
               colección de recuerdos que durarán para siempre.
             </p>
           </div>
-          <Link href="#registro" className={styles.ctaButton}>Registrarse gratis</Link>
+          <Link href="/signup" className={styles.ctaButton}>Registrarse gratis</Link>
         </div>
       </section>
     </main>
