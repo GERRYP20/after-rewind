@@ -3,10 +3,10 @@
 import PublicHeder from "@/components/layout/PublicHeder";
 import React, { useState } from "react";
 import Link from "next/link"; 
+import { useRouter, useSearchParams } from "next/navigation"; // Para redirección dinámica
 // Importamos la configuración de Firebase y las funciones necesarias
 import { auth, configureAuthPersistence } from "@/lib/firebase-client";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-console.log("AUTH:", auth);
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -18,6 +18,13 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // Hooks para manejar la navegación tras el login
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Si el middleware nos mandó aquí, 'redirectTo' tendrá la ruta a la que el usuario quería ir
+  const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+
   // Función para manejar el inicio de sesión con Firebase
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,11 +34,29 @@ function Login() {
     try {
       // Configuramos si la sesión persiste al cerrar el navegador
       await configureAuthPersistence(remember);
-      // Intentamos la autenticación
+      
+      // 1. Intentamos la autenticación en el cliente
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Sesión iniciada:", cred.user);
-      alert("¡Bienvenido!");
+      
+      // 2. CREACIÓN DE SESIÓN EN EL SERVIDOR (Crucial para el Middleware)
+      // Obtenemos el token de seguridad de Firebase
+      const idToken = await cred.user.getIdToken();
+      
+      // Enviamos el token a nuestra API para generar la cookie de sesión
+      const res = await fetch("/api/sessionLogin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken, remember }),
+      });
+
+      if (!res.ok) throw new Error("No se pudo crear la sesión en el servidor");
+
+      // 3. Redirección y refresco de estado
+      router.push(redirectTo);
+      router.refresh(); // Esto asegura que el Header y el Middleware detecten la nueva cookie
+      
     } catch (error: unknown) {
+      console.error("Login Error:", error);
       setErr("El correo o la contraseña son incorrectos.");
     } finally {
       setLoading(false);
@@ -43,11 +68,27 @@ function Login() {
     setErr(null);
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    
     try {
       await configureAuthPersistence(remember);
+      
+      // 1. Login con Popup
       const result = await signInWithPopup(auth, provider);
-      console.log("Usuario de Google:", result.user);
-    } catch (error:unknown) {
+      
+      // 2. Sincronizar con el servidor igual que en el login tradicional
+      const idToken = await result.user.getIdToken();
+      const res = await fetch("/api/sessionLogin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken, remember }),
+      });
+
+      if (!res.ok) throw new Error("Error en sesión de servidor con Google");
+
+      router.push(redirectTo);
+      router.refresh();
+      
+    } catch (error: unknown) {
       setErr("Error al conectar con Google.");
     } finally {
       setLoading(false);
