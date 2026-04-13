@@ -1,48 +1,77 @@
+/**
+ * Página de Login
+ * 
+ * Esta página implementa autenticación de dos fases:
+ * 1. Firebase SDK: Autenticación del usuario (email/password o Google)
+ * 2. API /api/sessionLogin: Creación de cookie de sesión server-side
+ * 
+ * El segundo paso es crucial para que el middleware y Server Components
+ * puedan verificar la identidad del usuario sin llamar a Firebase.
+ * 
+ * Estructura del componente:
+ * - LoginForm: Contiene toda la lógica (usa useSearchParams que requiere Suspense)
+ * - Login (export default): Wrapper con Suspense para Next.js
+ * 
+ * Fortalezas:
+ * - Suspense boundary para useSearchParams (Next.js requirement)
+ * - Manejo de errores con tipo 'unknown' (TypeScript)
+ * - Redirección inteligente basada en query params
+ */
 "use client";
 
 import PublicHeder from "@/components/layout/PublicHeder";
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link"; 
-import { useRouter, useSearchParams } from "next/navigation"; // Para redirección dinámica
-// Importamos la configuración de Firebase y las funciones necesarias
+import { useRouter, useSearchParams } from "next/navigation";
 import { auth, configureAuthPersistence } from "@/lib/firebase-client";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
-function Login() {
+/**
+ * LoginForm - Componente interno con la lógica de login
+ * 
+ * Separado del export default para poder usar useSearchParams dentro de Suspense.
+ * Next.js requiere que useSearchParams esté envuelto en Suspense.
+ */
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // Añadimos el estado para la persistencia (Recordarme) como en el proyecto de referencia
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(true);  // Por defecto: recordar sesión
   
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Hooks para manejar la navegación tras el login
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // Si el middleware nos mandó aquí, 'redirectTo' tendrá la ruta a la que el usuario quería ir
+  // Si el usuario fue redirigido desde el middleware, 'redirectTo' contiene la página destino
   const redirectTo = searchParams.get("redirectTo") || "/dashboard";
 
-  // Función para manejar el inicio de sesión con Firebase
+  /**
+   * handleLogin - Login con email y contraseña
+   * 
+   * Flujo de autenticación de dos fases:
+   * 1. Firebase valida credenciales en el navegador
+   * 2. Obtenemos el idToken de Firebase
+   * 3. Enviamos el idToken a /api/sessionLogin para crear la cookie
+   * 4. Recargamos el estado del router para que el servidor detecte la cookie
+   */
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
     setLoading(true);
 
     try {
-      // Configuramos si la sesión persiste al cerrar el navegador
+      // Configuramos la persistencia según preferencia del usuario
       await configureAuthPersistence(remember);
       
-      // 1. Intentamos la autenticación en el cliente
+      // FASE 1: Autenticación con Firebase (en el navegador)
       const cred = await signInWithEmailAndPassword(auth, email, password);
       
-      // 2. CREACIÓN DE SESIÓN EN EL SERVIDOR (Crucial para el Middleware)
-      // Obtenemos el token de seguridad de Firebase
-      const idToken = await cred.user.getIdToken();
+      // FASE 2: Crear sesión en el servidor
+      // Sin este paso, el middleware no puede verificar quién está logueado
+      const idToken = await cred.user.getIdToken();  // Obtenemos token de Firebase
       
-      // Enviamos el token a nuestra API para generar la cookie de sesión
       const res = await fetch("/api/sessionLogin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,11 +80,12 @@ function Login() {
 
       if (!res.ok) throw new Error("No se pudo crear la sesión en el servidor");
 
-      // 3. Redirección y refresco de estado
+      // Redirección + refresco del estado del servidor
       router.push(redirectTo);
-      router.refresh(); // Esto asegura que el Header y el Middleware detecten la nueva cookie
+      router.refresh();  // Crucial: actualiza Server Components y middleware
       
     } catch (error: unknown) {
+      // Usamos 'unknown' en vez de 'any' - es mejor práctica en TypeScript
       console.error("Login Error:", error);
       setErr("El correo o la contraseña son incorrectos.");
     } finally {
@@ -63,7 +93,13 @@ function Login() {
     }
   };
 
-  // Función para el botón de Google
+  /**
+   * handleGoogleLogin - Login con Google OAuth
+   * 
+   * Usa el mismo flujo de dos fases que el login normal:
+   * 1. Firebase maneja el popup de Google
+   * 2. Creamos la cookie de sesión server-side
+   */
   const handleGoogleLogin = async () => {
     setErr(null);
     setLoading(true);
@@ -72,11 +108,11 @@ function Login() {
     try {
       await configureAuthPersistence(remember);
       
-      // 1. Login con Popup
+      // Login con popup de Google
       const result = await signInWithPopup(auth, provider);
       
-      // 2. Sincronizar con el servidor igual que en el login tradicional
-      const idToken = await result.user.getIdToken();
+      // Sincronizar con el servidor (igual que en login normal)
+      const idToken = result.user.getIdToken();
       const res = await fetch("/api/sessionLogin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,7 +124,7 @@ function Login() {
       router.push(redirectTo);
       router.refresh();
       
-    } catch (error: unknown) {
+    } catch {
       setErr("Error al conectar con Google.");
     } finally {
       setLoading(false);
@@ -97,10 +133,6 @@ function Login() {
 
   return (
     <>
-      {/* Cabecera pública de navegación */}
-      <PublicHeder />
-      
-      {/* Contenedor principal de la página de inicio de sesión */}
       <section className="relative overflow-hidden bg-neutral-950 min-h-[calc(100vh-4rem)]">
         <div className="max-w-7xl mx-auto px-4 py-30 relative">
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -234,4 +266,13 @@ function Login() {
   );
 }
 
-export default Login;
+export default function Login() {
+  return (
+    <>
+      <PublicHeder />
+      <Suspense fallback={<div className="bg-neutral-950 min-h-screen text-white p-10">Cargando...</div>}>
+        <LoginForm />
+      </Suspense>
+    </>
+  );
+}

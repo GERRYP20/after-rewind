@@ -1,13 +1,32 @@
+/**
+ * Página de Registro de Usuario
+ * 
+ * Esta página permite crear nuevas cuentas de usuario.
+ * Implementa el mismo flujo de autenticación de dos fases que el login:
+ * 1. Firebase SDK: Crea el usuario y autentica
+ * 2. API /api/sessionLogin: Crea la cookie de sesión server-side
+ * 
+ * Fortalezas:
+ * - Actualización de perfil de usuario (displayName)
+ * - Validación de confirmación de contraseña
+ * - Mensajes de error seguros al usuario
+ * - Redirección automática tras registro exitoso
+ */
 "use client";
 
 import PublicHeder from "@/components/layout/PublicHeder";
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Importamos para la redirección
-import { auth, configureAuthPersistence } from "@/lib/firebase-client"; 
+import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase-client"; 
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
-// 1. Movemos la lógica a un componente interno para usar Suspense
+/**
+ * SignupForm - Componente interno con la lógica de registro
+ * 
+ * Separado del export default para mantener la estructura consistente
+ * con la página de login.
+ */
 function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,8 +36,18 @@ function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   
-  const router = useRouter(); //
+  const router = useRouter();
 
+  /**
+   * handleSignup - Registra un nuevo usuario
+   * 
+   * Flujo completo:
+   * 1. Validar que las contraseñas coincidan
+   * 2. Crear usuario con Firebase (email + password)
+   * 3. Actualizar el perfil con el nombre display
+   * 4. Crear sesión server-side (cookie)
+   * 5. Redirigir al dashboard
+   */
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
@@ -32,36 +61,34 @@ function SignupForm() {
     setLoading(true);
     
     try {
-      // A. Configurar persistencia (cliente)
-      await configureAuthPersistence(true);
-
-      // B. Crear el usuario en Firebase
+      // FASE 1: Crear usuario en Firebase
+      // Esto autentica automáticamente al nuevo usuario
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       
-      // C. Actualizar el nombre del usuario en su perfil de Firebase
+      // Actualizamos el perfil con el nombre proporcionado
+      // Firebase no guarda el nombre durante el registro, hay que hacerlo aparte
       if (name) {
         await updateProfile(cred.user, { displayName: name });
       }
 
-      // D. SINCRONIZACIÓN CON EL SERVIDOR (Igual que en el Login)
-      // Obtenemos el token del nuevo usuario
+      // FASE 2: Sincronizar con el servidor
+      // Sin este paso, el usuario no estaría autenticado en el servidor
       const idToken = await cred.user.getIdToken();
       
-      // Llamamos a tu API para crear la cookie de sesión
       const res = await fetch("/api/sessionLogin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken, remember: true }),
+        body: JSON.stringify({ idToken, remember: true }),  // Por defecto: recordar sesión
       });
 
       if (!res.ok) throw new Error("Error al sincronizar la sesión");
 
-      // E. Redirección y refresco de estado
+      // Redirección y actualización de estado
       router.push("/dashboard");
-      router.refresh(); // Crucial para que el middleware y el header detecten al usuario
+      router.refresh();  // Actualiza el servidor para detectar la nueva cookie
       
     } catch (error: unknown) {
-      // Corregimos el error (error: any) usando unknown y type-casting
+      // Manejo seguro de errores con tipo 'unknown'
       const errorMessage = error instanceof Error ? error.message : "Error al crear la cuenta";
       setErr(errorMessage);
       console.error("Signup error:", error);
@@ -158,7 +185,11 @@ function SignupForm() {
   );
 }
 
-// 2. Exportamos el componente envuelto en Suspense
+/**
+ * Signup - Componente exportado
+ * 
+ * Wrapper con Suspense para useRouter (patrón consistente con login).
+ */
 export default function Signup() {
   return (
     <>
