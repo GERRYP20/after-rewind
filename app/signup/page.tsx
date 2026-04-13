@@ -3,6 +3,8 @@
 import PublicHeder from "@/components/layout/PublicHeder";
 import React, { useState } from "react";
 import Link from "next/link";
+import { auth, configureAuthPersistence } from "@/lib/firebase-client"; // Asegúrate de importar esto
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 function Signup() {
   const [name, setName] = useState("");
@@ -13,23 +15,37 @@ function Signup() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErr(null);
+const handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErr(null);
 
-    if (password !== confirmPassword) {
-      setErr("Las contraseñas no coinciden");
-      return;
-    }
+  if (password !== confirmPassword) {
+    setErr("Las contraseñas no coinciden");
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
+  
+  try {
+    // 1. Configurar persistencia (opcional, pero recomendado)
+    await configureAuthPersistence(true);
+
+    // 2. Crear el usuario en Firebase
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
     
-    setTimeout(() => {
-      setLoading(false);
-      alert("¡Cuenta creada con éxito! (Simulación)");
-    }, 1500);
-  };
-
+    // 3. Actualizar el nombre del usuario en su perfil de Firebase
+    if (name) {
+      await updateProfile(cred.user, { displayName: name });
+    }
+    
+    alert("¡Cuenta creada con éxito!");
+    console.log("Usuario registrado:", cred.user);
+  } catch (error: unknown) {
+    setErr((error as Error).message || "Error al crear la cuenta");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <>
       {/* Cabecera pública de navegación */}

@@ -6,6 +6,7 @@ import Link from "next/link";
 // Importamos la configuración de Firebase y las funciones necesarias
 import { auth, configureAuthPersistence } from "@/lib/firebase-client";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+console.log("AUTH:", auth);
 
 function Login() {
   const [email, setEmail] = useState("");
