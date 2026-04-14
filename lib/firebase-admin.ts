@@ -36,7 +36,7 @@ const privateKey = privateKeyFromEnv
   .filter(line => line.length > 0)        // Elimina líneas vacías
   .join("\n");
 
-// Verificación adicional: asegúrate de que el PEM sea válido
+// Verificación adicional: aseguramos de que el PEM sea válido
 if (!privateKey.includes("-----BEGIN PRIVATE KEY-----")) {
   throw new Error("FIREBASE_PRIVATE_KEY es inválida: falta el encabezado PEM");
 }

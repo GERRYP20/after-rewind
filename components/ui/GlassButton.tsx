@@ -29,13 +29,15 @@ const variantStyles = {
     bg-amber-400
     text-neutral-900
     font-bold
-    hover:bg-amber-500
+    hover:bg-amber-400
+    hover:brightness-110
   `,
   secondary: `
     bg-white/10
     text-white
     border border-white/20
-    hover:bg-white/20
+    hover:bg-amber-400/30
+    hover:border-amber-400/50
   `,
   outline: `
     bg-transparent

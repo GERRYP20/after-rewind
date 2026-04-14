@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     console.error("Session creation error:", error);
     
     // Al cliente devolvemos un mensaje genérico, NO los detalles del error
-    // Esto previene information disclosure
+    // Esto previene information disclosure en caso de ataques o errores inesperados
     return NextResponse.json(
       { error: "Cannot create session" },
       { status: 401 },
