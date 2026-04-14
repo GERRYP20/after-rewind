@@ -18,6 +18,7 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   setPersistence,
+  signOut,
 } from "firebase/auth";
 
 // Configuración de Firebase - estas variables son PÚBLICAS (NEXT_PUBLIC_*)

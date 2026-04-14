@@ -26,7 +26,8 @@ import GlassInput from "@/components/ui/GlassInput";
 import GlassButton from "@/components/ui/GlassButton";
 import GlassPasswordInput from "@/components/ui/GlassPasswordInput";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
-import React, { useState, Suspense, ChangeEvent } from "react";
+import { useAuth } from "@/lib/use-auth";
+import React, { useState, Suspense, ChangeEvent, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase-client"; 
@@ -45,8 +46,16 @@ function SignupForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
   
   const router = useRouter();
+
+  // Redirigir al dashboard si el usuario ya está logueado
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, authLoading, router]);
 
   /**
    * handleSignup - Registra un nuevo usuario
@@ -182,10 +191,12 @@ function SignupForm() {
                 </GlassButton>
               </form>
 
-              {/* Enlace a Login */}
-              <p className="mt-6 text-center text-sm text-neutral-400">
-                ¿Ya tienes cuenta? <Link href="/login" className="text-amber-400 hover:text-amber-300 font-medium">Inicia sesión</Link>
-              </p>
+              {/* Enlace a Login - solo mostrar si no está logueado */}
+              {!user && (
+                <p className="mt-6 text-center text-sm text-neutral-400">
+                  ¿Ya tienes cuenta? <Link href="/login" className="text-amber-400 hover:text-amber-300 font-medium">Inicia sesión</Link>
+                </p>
+              )}
             </GlassCard>
           </div>
         </div>
