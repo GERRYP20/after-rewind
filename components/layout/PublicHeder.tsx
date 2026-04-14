@@ -35,7 +35,7 @@ function PublicHeder() {
   return (
     <header className={styles.siteHeader}>
       <nav className={styles.nav}>
-        {/* Cambié el href="#" por "/" para que el logo siempre lleve al inicio */}
+        {/* Cambiamos el href="#" por "/" para que el logo siempre lleve al inicio */}
         <Link href="/" className={styles.brand}>
           <Image 
             src="/logo.png" 
