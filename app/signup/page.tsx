@@ -62,7 +62,7 @@ function SignupForm() {
    * 
    * Flujo completo:
    * 1. Se valida que las contraseñas coincidan
-   * 2. Se crea usuario con Firebase (email + password)
+   * 2. Se crea usuario con Firebase (email y password)
    * 3. Se actualiza el perfil con el nombre display
    * 4. Se crea sesión server-side (cookie)
    * 5. Se redirige al dashboard
@@ -141,7 +141,7 @@ function SignupForm() {
                   label="Nombre completo"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej. Gerardo Pérez"
+                  placeholder="Ej. Julio Cesar"
                   required
                 />
 

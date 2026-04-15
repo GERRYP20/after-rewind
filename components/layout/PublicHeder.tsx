@@ -47,12 +47,14 @@ function PublicHeder() {
           <span className={styles.tagline}>AFTER-REWIND</span>
         </Link>
 
-        <ul className={styles.navLinks}>
-          <li><Link href="/dashboard">Inicio</Link></li>
-          <li><Link href="#">Crear Evento</Link></li>
-          <li><Link href="#">Mis Eventos</Link></li>
-          <li><Link href="#">Invitaciones</Link></li>
-        </ul>
+        {user && (
+          <ul className={styles.navLinks}>
+            <li><Link href="/dashboard">Inicio</Link></li>
+            <li><Link href="#">Crear Evento</Link></li>
+            <li><Link href="#">Mis Eventos</Link></li>
+            <li><Link href="#">Invitaciones</Link></li>
+          </ul>
+        )}
         
         {/* Lógica condicional: Si NO es página de auth Y el usuario NO está logueado, muestra el botón */}
         {!isAuthPage && !loading && !user && (
