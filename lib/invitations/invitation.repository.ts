@@ -22,7 +22,6 @@ export const InvitationRepository = {
   async getByUser(userId: string): Promise<Invitation[]> {
     const snapshot = await db.collection(COLLECTION_NAME)
       .where("createdBy", "==", userId)
-      .orderBy("createdAt", "desc")
       .get();
       
     return snapshot.docs.map(doc => {

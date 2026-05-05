@@ -7,24 +7,33 @@ import GlassButton from "@/components/ui/GlassButton";
 import { Invitation } from "@/lib/invitations/invitation.types";
 
 export default function Dashboard() {
-  // 2. Definimos que el estado es un arreglo de Invitaciones
   const [eventos, setEventos] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/invitations")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          res.json().then(data => setError(data.error || "Error")).catch(() => setError("Error"));
+          return [];
+        }
+        return res.json();
+      })
       .then((data: Invitation[]) => {
         setEventos(data);
         setLoading(false);
       })
       .catch(err => {
         console.error("Error:", err);
+        setError(err instanceof Error ? err.message : "Error desconocido");
         setLoading(false);
       });
   }, []);
 
   if (loading) return <div className="pt-32 text-center text-white text-xl">Buscando tus eventos...</div>;
+
+  if (error) return <div className="pt-32 text-center text-red-400 text-xl">Error: {error}</div>;
 
   return (
     <div className="pt-32 p-8 max-w-7xl mx-auto min-h-screen">

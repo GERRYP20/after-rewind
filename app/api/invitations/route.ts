@@ -4,54 +4,64 @@ import { adminAuth } from "@/lib/firebase-admin";
 import { InvitationRepository } from "@/lib/invitations/invitation.repository";
 import { Invitation } from "@/lib/invitations/invitation.types";
 
+const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
+
 export async function GET(): Promise<NextResponse> {
   try {
     const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get("session")?.value;
+    const sessionCookie = cookieStore.get(COOKIE_NAME)?.value;
+
+    console.log("Looking for cookie:", COOKIE_NAME, "Found:", !!sessionCookie);
 
     if (!sessionCookie) {
-      return NextResponse.json([], { status: 401 });
+      return NextResponse.json({ error: "No hay sesión" }, { status: 401 });
     }
 
-    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie);
+    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const userId: string = decodedToken.uid;
+
+    console.log("Fetching invitations for userId:", userId);
 
     const invitations: Invitation[] = await InvitationRepository.getByUser(userId);
     return NextResponse.json(invitations);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error en GET /api/invitations:", errorMessage);
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    console.error("Error fetching invitations:", error);
+    return NextResponse.json({ error: "Error al obtener invitaciones" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get("session")?.value;
+    const sessionCookie = cookieStore.get(COOKIE_NAME)?.value;
 
     if (!sessionCookie) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+      return NextResponse.json({ error: "No hay sesión" }, { status: 401 });
     }
 
-    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie);
+    const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const userId: string = decodedToken.uid;
 
-    // Tipamos el cuerpo de la petición omitiendo el ID que genera la DB
-    const body = (await request.json()) as Omit<Invitation, "id" | "createdBy">;
-    
-    const newInvitation: Omit<Invitation, "id"> = {
-      ...body,
+    console.log("Creating invitation for userId:", userId);
+
+    const body = await request.json();
+    const { title, date, location, accessCode } = body;
+
+    if (!title || !date || !location || !accessCode) {
+      return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
+    }
+
+    const invitationId = await InvitationRepository.create({
+      title,
+      date,
+      location,
+      accessCode,
       createdBy: userId,
-      createdAt: new Date().toISOString(),
-    };
+    });
 
-    const id: string = await InvitationRepository.create(newInvitation);
-
-    return NextResponse.json({ success: true, id }, { status: 201 });
+    return NextResponse.json({ id: invitationId, message: "Invitación creada" }, { status: 201 });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error en POST /api/invitations:", errorMessage);
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    console.error("Error al crear invitación:", error);
+    return NextResponse.json({ error: "Error al guardar la invitación" }, { status: 500 });
   }
 }
