@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebase-admin";
 import { InvitationRepository } from "@/lib/invitations/invitation.repository";
+import { Invitation } from "@/lib/invitations/invitation.types";
 
-// Obtener solo las invitaciones del usuario logueado
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
@@ -13,20 +13,19 @@ export async function GET() {
       return NextResponse.json([], { status: 401 });
     }
 
-    // Verificamos quién es el usuario mediante su cookie
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie);
-    const userId = decodedToken.uid;
+    const userId: string = decodedToken.uid;
 
-    const invitations = await InvitationRepository.getByUser(userId);
+    const invitations: Invitation[] = await InvitationRepository.getByUser(userId);
     return NextResponse.json(invitations);
-  } catch (error) {
-    console.error("Error al obtener invitaciones:", error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error en GET /api/invitations:", errorMessage);
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 }
 
-// Crear una invitación vinculada al usuario actual
-export async function POST(request: Request) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
@@ -36,20 +35,23 @@ export async function POST(request: Request) {
     }
 
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie);
-    const userId = decodedToken.uid;
+    const userId: string = decodedToken.uid;
 
-    const body = await request.json();
+    // Tipamos el cuerpo de la petición omitiendo el ID que genera la DB
+    const body = (await request.json()) as Omit<Invitation, "id" | "createdBy">;
     
-    // Guardamos incluyendo el ID del creador
-    const id = await InvitationRepository.create({
+    const newInvitation: Omit<Invitation, "id"> = {
       ...body,
-      createdBy: userId, // Vínculo crítico para la privacidad[cite: 1]
-      createdAt: new Date(),
-    });
+      createdBy: userId,
+      createdAt: new Date().toISOString(),
+    };
+
+    const id: string = await InvitationRepository.create(newInvitation);
 
     return NextResponse.json({ success: true, id }, { status: 201 });
-  } catch (error) {
-    console.error("Error al crear invitación:", error);
-    return NextResponse.json({ error: "Error de servidor" }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error en POST /api/invitations:", errorMessage);
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
