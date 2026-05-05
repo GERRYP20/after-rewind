@@ -1,27 +1,31 @@
-"use client"; // CRITICAL: Esto permite usar hooks de navegación en el cliente
+"use client";
 
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation"; // Importamos el hook para detectar la ruta
-import { useAuth } from "@/lib/use-auth"; // Hook para detectar autenticación
-import { auth } from "@/lib/firebase-client"; // Firebase auth
+import { usePathname, useRouter } from "next/navigation"; 
+import { useAuth } from "@/lib/use-auth"; 
+import { auth } from "@/lib/firebase-client"; 
 import { signOut as firebaseSignOut } from "firebase/auth";
 import styles from "./PublicHeder.module.css";
 
 function PublicHeder() {
-  const pathname = usePathname(); // Obtenemos la ruta actual (ej: "/login")
-  const { user, loading } = useAuth(); // Obtenemos el estado de autenticación
+  const pathname = usePathname();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
-  // Función para cerrar sesión
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
+      // 1. Cerrar sesión en Firebase
       await firebaseSignOut(auth);
+      // 2. Limpiar cookies del servidor
       await fetch("/api/logout", { method: "POST" });
-      router.refresh();
+      
+      // 3. ¡CORRECCIÓN!: Redirigir a la página de inicio
+      router.push("/");
+      router.refresh(); // Asegura que el estado del servidor se actualice
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     } finally {
@@ -29,13 +33,11 @@ function PublicHeder() {
     }
   };
 
-  // Definimos las rutas donde NO queremos que aparezca el botón de iniciar sesión
   const isAuthPage = pathname === "/login" || pathname === "/signup";
 
   return (
     <header className={styles.siteHeader}>
       <nav className={styles.nav}>
-        {/* Cambiamos el href="#" por "/" para que el logo siempre lleve al inicio */}
         <Link href="/" className={styles.brand}>
           <Image 
             src="/logo.png" 
@@ -49,21 +51,19 @@ function PublicHeder() {
 
         {user && (
           <ul className={styles.navLinks}>
-            <li><Link href="/dashboard">Inicio</Link></li>
-            <li><Link href="#">Crear Evento</Link></li>
-            <li><Link href="#">Mis Eventos</Link></li>
+            {/* Actualizamos los enlaces a las rutas reales que creamos */}
+            <li><Link href="/dashboard">Mis Eventos</Link></li>
+            <li><Link href="/dashboard/invitaciones/nueva">Crear Evento</Link></li>
             <li><Link href="#">Invitaciones</Link></li>
           </ul>
         )}
         
-        {/* Lógica condicional: Si NO es página de auth Y el usuario NO está logueado, muestra el botón */}
         {!isAuthPage && !loading && !user && (
           <Link href="/login" className={styles.navCta}>
             INICIAR SESIÓN
           </Link>
         )}
 
-        {/* Si el usuario está logueado, muestra el botón de cerrar sesión */}
         {!isAuthPage && !loading && user && (
           <button 
             onClick={handleLogout}

@@ -1,90 +1,62 @@
-import React from "react";
+"use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import styles from "@/components/layout/PublicHeder.module.css";
+import GlassCard from "@/components/ui/GlassCard";
+import GlassButton from "@/components/ui/GlassButton";
+// 1. Importamos la interfaz para que TypeScript sepa qué es un 'evento'
+import { Invitation } from "@/lib/invitations/invitation.types";
 
-export default function Home() {
+export default function Dashboard() {
+  // 2. Definimos que el estado es un arreglo de Invitaciones
+  const [eventos, setEventos] = useState<Invitation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/invitations")
+      .then(res => res.json())
+      .then((data: Invitation[]) => {
+        setEventos(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="pt-32 text-center text-white text-xl">Buscando tus eventos...</div>;
+
   return (
-    <main className={styles.mainWrapper}>
-      {/* 1. SECCIÓN HERO */}
-      <section className={styles.hero}>
-        <div className={styles.heroContent}>
-          <h1>
-            Captura la <span className={styles.highlight}>Esencia</span><br />
-            de cada instante
-          </h1>
-          <p className={styles.heroSub}>
-            AFTER-REWIND es la plataforma premium para gestionar eventos
-            exclusivos y crear memorias visuales inolvidables.
-          </p>
-          <div className={styles.heroButtons}>
-            <Link href="#" className={styles.btnPrimary}>EMPEZAR AHORA</Link>
-            <Link href="#" className={styles.btnSecondary}>VER DEMO</Link>
-          </div>
-        </div>
-      </section>
+    <div className="pt-32 p-8 max-w-7xl mx-auto min-h-screen">
+      <div className="flex justify-between items-center mb-10">
+        <h1 className="text-4xl font-bold text-white">Mis Eventos</h1>
+        <Link href="/dashboard/invitaciones/nueva">
+          <GlassButton>+ Crear Evento</GlassButton>
+        </Link>
+      </div>
 
-      {/* 2. SECCIÓN DETALLES / STATS */}
-      <section id="section2" className={styles.second}>
-        <div className={styles.heroContent2}>
-          <h1>Excelencia en <span className={styles.highlight}>Detalles</span></h1>
-          <p className={styles.heroSub2}>
-            Desde la planificación hasta la ejecución, AFTER-REWIND se encarga
-            de cada detalle para que tu evento sea perfecto.
-          </p>
+      {eventos.length === 0 ? (
+        <GlassCard>
+          <div className="text-center py-10 text-white">No hay eventos guardados aún.</div>
+        </GlassCard>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* 3. Cambiamos 'any' por 'Invitation'[cite: 2] */}
+          {eventos.map((evento: Invitation) => (
+            <GlassCard key={evento.id} title={evento.title}>
+              <div className="text-gray-200 space-y-3">
+                <p>📍 {evento.location}</p>
+                {/* 4. Usamos un String de la fecha (convertida en el repositorio)[cite: 2] */}
+                <p>📅 {evento.date.toString()}</p>
+                <div className="bg-white/10 p-2 rounded text-center font-mono text-yellow-400">
+                  Código: {evento.accessCode}
+                </div>
+                <GlassButton className="w-full mt-4">Gestionar Evento</GlassButton>
+              </div>
+            </GlassCard>
+          ))}
         </div>
-        <div className={styles.stats}>
-          <div className={styles.stat}>
-            <div className={styles.statNum}>10k</div>
-            <div className={styles.statLabel}>Eventos Organizados con nosotros</div>
-          </div>
-          <div className={styles.stat}>
-            <div className={styles.statNum}>500K+</div>
-            <div className={styles.statLabel}>Fotos Compartidas</div>
-          </div>
-          <div className={styles.stat}>
-            <div className={styles.statNum}>4.9/5</div>
-            <div className={styles.statLabel}>Valoración de Usuarios</div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. SECCIÓN CÓMO FUNCIONA */}
-      <section className={styles.steps}>
-        <div className={styles.container}>
-          <h2 className={styles.stepsTitle}>Cómo funciona</h2>
-          <div className={styles.stepsGrid}>
-            <div className={styles.effect}>
-              <span>01</span>
-              <h3>Crea tu evento</h3>
-              <p>Configura tu evento en segundos.</p>
-            </div>
-            <div className={styles.effect}>
-              <span>02</span>
-              <h3>Invita amigos</h3>
-              <p>Comparte el acceso con quien quieras.</p>
-            </div>
-            <div className={styles.effect}>
-              <span>03</span>
-              <h3>Guarda recuerdos</h3>
-              <p>Todos pueden subir fotos.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. SECCIÓN CTA FINAL */}
-      <section className={styles.cta}>
-        <div className={styles.ctaContainer}>
-          <div className={styles.ctaText}>
-            <h2>Todo gran recuerdo comienza con un momento</h2>
-            <p>
-              Crea eventos, invita a tus amigos y construyan juntos una
-              colección de recuerdos que durarán para siempre.
-            </p>
-          </div>
-          <Link href="/signup" className={styles.ctaButton}>Registrarse gratis</Link>
-        </div>
-      </section>
-    </main>
+      )}
+    </div>
   );
 }
