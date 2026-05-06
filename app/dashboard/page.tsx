@@ -23,7 +23,7 @@ const CATEGORY_META: Record<string, { icon: string; bg: string }> = {
   cena: { icon: "🍽", bg: "#f97316" },
   reunión: { icon: "🤝", bg: "#8b5cf6" },
   picnic: { icon: "🧺", bg: "#22c55e" },
-  default: { icon: "✦", bg: "#f59e0b" },
+  default: { icon: "✦", bg: "#E0B046 " },
 };
 
 type Filter = "todos" | "próximos" | "pasados";
@@ -169,7 +169,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
               textOverflow: "ellipsis",
             }}
           >
-            <span style={{ color: "#f59e0b" }}>📍</span>
+            <span style={{ color: "#E0B046 " }}>📍</span>
             {evento.location}
           </p>
 
@@ -209,7 +209,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
               {/* El código en monoespaciado y ámbar */}
               <p
                 style={{
-                  color: "#f59e0b" /* amber-400 */,
+                  color: "#E0B046 " /* amber-400 */,
                   fontSize: "14px",
                   fontFamily: "monospace",
                   fontWeight: 700,
@@ -297,7 +297,7 @@ function CreateEventCard() {
             alignItems: "center",
             justifyContent: "center",
             fontSize: "28px",
-            color: "#f59e0b",
+            color: "#E0B046 ",
             fontWeight: 300,
             lineHeight: 1,
             transition: "all 0.3s ease",
@@ -385,7 +385,7 @@ export default function Dashboard() {
             width: "32px",
             height: "32px",
             borderRadius: "50%",
-            border: "2px solid #f59e0b",
+            border: "2px solid #E0B046",
             borderTopColor: "transparent",
             animation: "spin 0.8s linear infinite",
           }}
@@ -434,7 +434,7 @@ export default function Dashboard() {
             margin: "0 0 8px 0",
           }}
         >
-          Mis Eventos <span style={{ color: "#f59e0b" }}>Creados</span>
+          Mis Eventos <span style={{ color: "#E0B046" }}>Creados</span>
         </h1>
         <p
           style={{
@@ -487,11 +487,11 @@ export default function Dashboard() {
                 gap: "8px",
                 transition: "all 0.2s ease",
                 // Activo: fondo ámbar + texto negro; Inactivo: transparente + texto gris
-                backgroundColor: filter === f.key ? "#f59e0b" : "transparent",
+                backgroundColor: filter === f.key ? "#E0B046 " : "transparent",
                 color: filter === f.key ? "#000" : "#71717a",
                 boxShadow:
                   filter === f.key
-                    ? "0 4px 12px rgba(245,158,11,0.35)"
+                    ? "0 4px 12px rgba(224, 176, 70, 0.35)"
                     : "none",
               }}
             >
