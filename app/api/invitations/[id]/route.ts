@@ -3,10 +3,10 @@ import { InvitationRepository } from "@/lib/invitations/invitation.repository";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // Params es ahora una promesa
 ) {
   try {
-    const id = (await params).id;
+    const { id } = await params;
     const invitation = await InvitationRepository.getById(id);
     
     if (!invitation) {
@@ -14,7 +14,7 @@ export async function GET(
     }
     
     return NextResponse.json(invitation);
-  } catch (error) {
+  } catch (error: unknown) {
     return NextResponse.json({ error: "Error de servidor" }, { status: 500 });
   }
 }
