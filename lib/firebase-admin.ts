@@ -47,8 +47,8 @@ export const adminApp = getApps().length
 
 /**
  * Exportamos los servicios principales para el backend de After-Rewind.
- * - adminAuth: Usado en API routes para verificar la cookie de sesión[cite: 2].
- * - db: Instancia de Firestore usada en los Repositories para persistencia[cite: 2].
+ * - adminAuth: Usado en API routes para verificar la cookie de sesión.
+ * - db: Instancia de Firestore usada en los Repositories para persistencia.
  */
 export const adminAuth = getAuth(adminApp);
 export const db = getFirestore(adminApp);
