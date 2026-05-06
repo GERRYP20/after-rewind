@@ -29,19 +29,22 @@ export const InvitationRepository = {
   // Esto se usa cuando el usuario entra a su dashboard y quiere ver sus eventos
   async getByUser(userId: string): Promise<Invitation[]> {
     // Consultamos la colección buscando solo las que fueron creadas por este usuario
-    const snapshot = await db.collection(COLLECTION_NAME)
+    const snapshot = await db
+      .collection(COLLECTION_NAME)
       .where("createdBy", "==", userId)
       .get();
-      
+
     // Convertimos cada documento de Firestore a un objeto de tipo Invitation
-    return snapshot.docs.map(doc => {
+    return snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id, // El ID del documento en Firestore
-        ...data,    // El resto de campos del documento
+        ...data, // El resto de campos del documento
         // Convertimos el Timestamp a String ISO para que sea serializable en Next.js
         // Esto evita problemas al enviar los datos al frontend
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+        createdAt: data.createdAt?.toDate
+          ? data.createdAt.toDate().toISOString()
+          : data.createdAt,
       } as unknown as Invitation;
     });
   },
@@ -50,24 +53,39 @@ export const InvitationRepository = {
   // Esto sirve cuando alguien intenta acceder a un evento mediante el código
   async getByCode(code: string): Promise<Invitation | null> {
     // Buscamos en la colección donde el código coincida exactamente
-    const snapshot = await db.collection(COLLECTION_NAME)
+    const snapshot = await db
+      .collection(COLLECTION_NAME)
       .where("accessCode", "==", code)
       .limit(1)
       .get();
 
     // Si no encontramos nada, devolvemos null para indicar que no existe
     if (snapshot.empty) return null;
-    
+
     // Obtenemos el primer resultado (solo debería haber uno porque el código es único)
     const doc = snapshot.docs[0];
     const data = doc.data();
-    
+
     // armamos el objeto de invitación con sus datos
-    return { 
-      id: doc.id, 
+    return {
+      id: doc.id,
       ...data,
       // Misma conversión de fecha que en getByUser para mantener el formato consistente
-      createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+      createdAt: data.createdAt?.toDate
+        ? data.createdAt.toDate().toISOString()
+        : data.createdAt,
     } as unknown as Invitation;
-  }
+  },
+  async getById(id: string): Promise<Invitation | null> {
+    const doc = await db.collection(COLLECTION_NAME).doc(id).get();
+    if (!doc.exists) return null;
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: data?.createdAt?.toDate
+        ? data.createdAt.toDate().toISOString()
+        : data?.createdAt,
+    } as unknown as Invitation;
+  },
 };
