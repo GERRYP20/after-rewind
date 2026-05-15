@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Invitation } from "@/lib/invitations/invitation.types";
+import SearchByCode from "@/components/search/SearchByCode";
 
 // ─── Colores de portada definidos como estilos inline (no clases dinámicas) ──
 // Tailwind no puede generar clases construidas con variables en runtime,
@@ -436,18 +437,23 @@ export default function Dashboard() {
         >
           Mis Eventos <span style={{ color: "#E0B046" }}>Creados</span>
         </h1>
-        <p
-          style={{
-            color: "#71717a",
-            fontSize: "14px",
-            margin: 0,
-            maxWidth: "480px",
-          }}
-        >
-          Gestiona tus eventos, revisa estadísticas y administra álbumes
-          compartidos.
-        </p>
+<p
+            style={{
+              color: "#71717a",
+              fontSize: "14px",
+              margin: 0,
+              maxWidth: "480px",
+            }}
+          >
+            Gestiona tus eventos, revisa estadísticas y administra álbumes
+            compartidos.
+          </p>
       </header>
+
+      {/* ── SECCIÓN: BUSCAR EVENTO POR CÓDIGO ─────────────────────────────── */}
+      <div style={{ marginBottom: "3rem" }}>
+        <SearchByCode />
+      </div>
 
       {/* ── BARRA DE CONTROLES ─────────────────────────────────────────── */}
       <div
