@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-// ─── Categorías disponibles para el evento ────────────────────────────────────
+// ─── Categorías disponibles para el evento ──────
 const CATEGORIAS = [
   { key: "boda",       label: "Boda",       icon: "💍" },
   { key: "cumpleaños", label: "Cumpleaños", icon: "🎂" },
@@ -53,12 +53,12 @@ export default function NuevaInvitacion() {
     setFotosPreview(prev => [...prev, ...urls].slice(0, 9)); // máximo 9 fotos
   };
 
-  // ── Elimina una foto del preview ─────────────────────────────────────────────
+  // ── Elimina una foto del preview ───────────────
   const eliminarFoto = (index: number) => {
     setFotosPreview(prev => prev.filter((_, i) => i !== index));
   };
 
-  // ── Envía el formulario a la API ─────────────────────────────────────────────
+  // ── Envía el formulario a la API ───────────────
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
@@ -80,7 +80,7 @@ export default function NuevaInvitacion() {
     }
   };
 
-  // ── Estilos reutilizables para inputs ────────────────────────────────────────
+  // ── Estilos reutilizables para inputs ──────────
   const inputStyle: React.CSSProperties = {
     width: "100%",
     backgroundColor: "#09090b",       /* negro profundo para el input */
@@ -117,7 +117,7 @@ export default function NuevaInvitacion() {
       alignItems: "center",
     }}>
 
-      {/* ── ENCABEZADO ─────────────────────────────────────────────────────── */}
+      {/* ── ENCABEZADO ───────────────────────── */}
       <div style={{ textAlign: "center", marginBottom: "2.5rem", maxWidth: "560px" }}>
         <p style={{ color: "#E0B046 ", fontSize: "11px", fontWeight: 900, letterSpacing: "0.25em", textTransform: "uppercase", margin: "0 0 12px 0" }}>
           ✦ Nuevo Evento
@@ -130,7 +130,7 @@ export default function NuevaInvitacion() {
         </p>
       </div>
 
-      {/* ── INDICADOR DE PASOS ─────────────────────────────────────────────── */}
+      {/* ── INDICADOR DE PASOS ───────────────── */}
       <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "2.5rem" }}>
         {/* Paso 1 */}
         {[
@@ -168,7 +168,7 @@ export default function NuevaInvitacion() {
         ))}
       </div>
 
-      {/* ── CONTENEDOR PRINCIPAL DEL FORMULARIO ────────────────────────────── */}
+      {/* ── CONTENEDOR PRINCIPAL DEL FORMULARIO  */}
       <div style={{
         width: "100%",
         maxWidth: "680px",
@@ -178,9 +178,9 @@ export default function NuevaInvitacion() {
         overflow: "hidden",
       }}>
 
-        {/* ════════════════════════════════════════════════════════════════════
+        {/* 
             PASO 1 — DETALLES DEL EVENTO
-        ════════════════════════════════════════════════════════════════════ */}
+        */}
         {step === 1 && (
           <div>
             {/* Banner decorativo superior */}
@@ -192,7 +192,7 @@ export default function NuevaInvitacion() {
 
             <div style={{ padding: "36px" }}>
 
-              {/* ── Selector de categoría ────────────────────────────────── */}
+              {/* ── Selector de categoría ──── */}
               <div style={{ marginBottom: "28px" }}>
                 <p style={labelStyle}>Tipo de evento</p>
                 {/* Grilla de botones de categoría */}
@@ -221,7 +221,7 @@ export default function NuevaInvitacion() {
                 </div>
               </div>
 
-              {/* ── Campos del formulario ─────────────────────────────────── */}
+              {/* ── Campos del formulario ───── */}
               <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
                 {/* Nombre del evento */}
@@ -336,9 +336,9 @@ export default function NuevaInvitacion() {
           </div>
         )}
 
-        {/* ════════════════════════════════════════════════════════════════════
+        {/* 
             PASO 2 — FOTOS DEL EVENTO (UI no funcional)
-        ════════════════════════════════════════════════════════════════════ */}
+        */}
         {step === 2 && (
           <div>
             {/* Banner decorativo */}
@@ -389,7 +389,7 @@ export default function NuevaInvitacion() {
                 Sube fotos para que aparezcan en el álbum compartido. Máximo 9 fotos.
               </p>
 
-              {/* ── Zona de arrastre principal ────────────────────────────── */}
+              {/* ── Zona de arrastre principal  */}
               <div
                 onClick={() => fileInputRef.current?.click()}
                 style={{
@@ -431,7 +431,7 @@ export default function NuevaInvitacion() {
                 style={{ display: "none" }}
               />
 
-              {/* ── Grid de previews de fotos ─────────────────────────────── */}
+              {/* ── Grid de previews de fotos ─ */}
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",

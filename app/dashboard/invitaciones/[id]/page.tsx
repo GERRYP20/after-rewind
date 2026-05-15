@@ -3,6 +3,9 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Invitation } from "@/lib/invitations/invitation.types";
+import { Comment } from "@/lib/comments/comment.types";
+import CommentForm from "@/components/comments/CommentForm";
+import CommentList from "@/components/comments/CommentList";
 
 
 // ─── Colores de portada por categoría (primera palabra del título) ────────────
@@ -27,7 +30,8 @@ export default function DetalleEvento() {
   const { id } = useParams();
   const [evento, setEvento] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copiado, setCopiado] = useState(false); // estado del botón de copiar código
+  const [copiado, setCopiado] = useState(false);
+  const [comentarios, setComentarios] = useState<Comment[]>([]);
 
   // Carga los datos del evento desde la API
   useEffect(() => {
@@ -36,6 +40,15 @@ export default function DetalleEvento() {
       .then((data) => {
         if (!data.error) setEvento(data);
         setLoading(false);
+      });
+  }, [id]);
+
+  // Carga los comentarios del evento
+  useEffect(() => {
+    fetch(`/api/invitations/${id}/comments`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) setComentarios(data);
       });
   }, [id]);
 
@@ -48,8 +61,13 @@ export default function DetalleEvento() {
     });
   };
 
+  // Agrega un nuevo comentario a la lista
+  const handleCommentAdded = (comment: Comment) => {
+    setComentarios((prev) => [comment, ...prev]);
+  };
+
   // Calcula los días que faltan para el evento
-  // Calcula los días que faltan para el evento — useMemo evita llamar Date.now() en el render
+  // Calcula los días que faltan para el evento con UseMemo
   const diasRestantes = useMemo(() => {
     if (!evento) return null;
     const hoy = new Date(); // forma correcta de obtener la fecha actual en React
@@ -62,7 +80,7 @@ export default function DetalleEvento() {
   const categoryKey = evento?.title?.split(" ")[0]?.toLowerCase() ?? "default";
   const coverGradient = COVER_STYLES[categoryKey] ?? COVER_STYLES.default;
 
-  // ── Pantalla de carga ──────────────────────────────────────────────────────
+  // Pantalla de carga
   if (loading)
     return (
       <div
@@ -99,7 +117,7 @@ export default function DetalleEvento() {
       </div>
     );
 
-  // ── Evento no encontrado ───────────────────────────────────────────────────
+  //  Evento no encontrado 
   if (!evento)
     return (
       <div
@@ -126,7 +144,7 @@ export default function DetalleEvento() {
     <div
       style={{ minHeight: "100vh", paddingTop: "5rem", paddingBottom: "6rem" }}
     >
-      {/* ── HERO: portada grande con gradiente de color ─────────────────────── */}
+      {/* HERO: portada grande con gradiente de color*/}
       <div
         style={{
           width: "100%",
@@ -636,6 +654,69 @@ export default function DetalleEvento() {
               </strong>{" "}
               aparecerán aquí.
             </p>
+          </div>
+        </div>
+
+        {/* ── Sección: Comentarios ─────────────────────────────────────────────── */}
+        <div
+          style={{
+            backgroundColor: "#18181b",
+            border: "1px solid #3f3f46",
+            borderRadius: "20px",
+            padding: "28px",
+            marginTop: "20px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "20px",
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  color: "#71717a",
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.15em",
+                  margin: "0 0 4px 0",
+                }}
+              >
+                Comentarios
+              </p>
+              <p
+                style={{
+                  color: "white",
+                  fontWeight: 900,
+                  fontSize: "16px",
+                  margin: 0,
+                }}
+              >
+                Opiniones de los invitados
+              </p>
+            </div>
+            <span
+              style={{
+                backgroundColor: "rgba(224,176,70,0.15)",
+                color: "#E0B046",
+                fontSize: "11px",
+                fontWeight: 800,
+                padding: "6px 12px",
+                borderRadius: "8px",
+              }}
+            >
+              {comentarios.length} {comentarios.length === 1 ? "comentario" : "comentarios"}
+            </span>
+          </div>
+
+          <CommentForm eventId={id as string} onCommentAdded={handleCommentAdded} />
+
+          <div style={{ marginTop: "24px" }}>
+            <CommentList comments={comentarios} />
           </div>
         </div>
 

@@ -17,6 +17,8 @@ export interface Invitation {
   createdBy: string;
   // Fecha y hora exactas de cuando se creó la invitación en el sistema
   createdAt?: string;
+
+  imageUrl?: string; // URL de la imagen de portada del evento (opcional)
 }
 
 // Esta interfaz representa un comentario en un evento (funcionalidad futura)
