@@ -66,6 +66,38 @@ export default function DetalleEvento() {
     setComentarios((prev) => [comment, ...prev]);
   };
 
+  // Actualiza un comentario existente en la lista (después de editar)
+  const handleCommentEdit = async (commentId: string, newText: string) => {
+    const res = await fetch(`/api/invitations/${id}/comments/${commentId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: newText }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Error al editar comentario");
+    }
+
+    setComentarios((prev) =>
+      prev.map((c) => (c.id === commentId ? { ...c, text: newText } : c))
+    );
+  };
+
+  // Elimina un comentario de la lista
+  const handleCommentDelete = async (commentId: string) => {
+    const res = await fetch(`/api/invitations/${id}/comments/${commentId}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Error al eliminar comentario");
+    }
+
+    setComentarios((prev) => prev.filter((c) => c.id !== commentId));
+  };
+
   // Calcula los días que faltan para el evento
   // Calcula los días que faltan para el evento con UseMemo
   const diasRestantes = useMemo(() => {
@@ -716,7 +748,11 @@ export default function DetalleEvento() {
           <CommentForm eventId={id as string} onCommentAdded={handleCommentAdded} />
 
           <div style={{ marginTop: "24px" }}>
-            <CommentList comments={comentarios} />
+            <CommentList 
+              comments={comentarios} 
+              onEdit={handleCommentEdit}
+              onDelete={handleCommentDelete}
+            />
           </div>
         </div>
 

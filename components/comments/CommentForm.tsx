@@ -33,9 +33,11 @@ export default function CommentForm({ eventId, onCommentAdded }: CommentFormProp
       const newComment: Comment = {
         id: data.id,
         eventId,
+        userId: "", // El servidor agregará el userId real
         userName: "Tú",
         text: text.trim(),
         createdAt: new Date().toISOString(),
+        isOwner: true, // El usuario siempre es propietario de sus propios comentarios
       };
       onCommentAdded(newComment);
       setText("");

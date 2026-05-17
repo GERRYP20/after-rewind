@@ -20,17 +20,3 @@ export interface Invitation {
 
   imageUrl?: string; // URL de la imagen de portada del evento (opcional)
 }
-
-// Esta interfaz representa un comentario en un evento (funcionalidad futura)
-export interface Comment {
-  // ID único del comentario
-  id?: string;
-  // ID del usuario que escribió el comentario
-  userId: string;
-  // Nombre que se muestra del usuario que comentou
-  userName: string;
-  // El contenido del comentario en sí
-  text: string;
-  // Momento en que se publicó el comentario
-  timestamp: Date;
-}
