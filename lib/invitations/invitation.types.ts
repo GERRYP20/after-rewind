@@ -19,4 +19,7 @@ export interface Invitation {
   createdAt?: string;
 
   imageUrl?: string; // URL de la imagen de portada del evento (opcional)
+  updatedAt?: string; // Fecha de última actualización (opcional)
+  description?: string; // Descripción del evento (opcional)
+  category?: string; // Categoría del evento (opcional)
 }

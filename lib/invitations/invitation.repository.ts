@@ -75,4 +75,29 @@ export const InvitationRepository = {
     
     return mapInvitation(doc);
   },
+
+  // Método para actualizar una invitación existente
+  // @param id - ID del documento en Firestore
+  // @param data - Datos a actualizar (parcial del tipo Invitation)
+  async update(id: string, data: Partial<Invitation>): Promise<void> {
+    // Filtramos las propiedades que no queremos incluir en la actualización
+    const updateData = { ...data };
+    
+    // Eliminar campos que no deben actualizarse
+    delete updateData.id;
+    delete updateData.createdAt;
+    delete updateData.createdBy;
+    delete updateData.accessCode;
+    
+    // Agregar fecha de actualización (Firestore acepta Date objects)
+    updateData.updatedAt = new Date() as unknown as string;
+    
+    await db.collection(COLLECTION_NAME).doc(id).update(updateData);
+  },
+
+  // Método para eliminar una invitación de Firestore
+  // @param id - ID del documento a eliminar
+  async delete(id: string): Promise<void> {
+    await db.collection(COLLECTION_NAME).doc(id).delete();
+  },
 };

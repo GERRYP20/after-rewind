@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/lib/use-auth";
 import { Invitation } from "@/lib/invitations/invitation.types";
 import { Comment } from "@/lib/comments/comment.types";
 import CommentForm from "@/components/comments/CommentForm";
 import CommentList from "@/components/comments/CommentList";
+import EventEditForm from "@/components/invitations/EventEditForm";
 
 
 // ─── Colores de portada por categoría (primera palabra del título) ────────────
@@ -28,10 +30,21 @@ const STATS = [
 
 export default function DetalleEvento() {
   const { id } = useParams();
+  const router = useRouter();
+  const { user } = useAuth();
+  
   const [evento, setEvento] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiado, setCopiado] = useState(false);
   const [comentarios, setComentarios] = useState<Comment[]>([]);
+  
+  // Estados para edición y eliminación del evento
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState(false);
+
+  // Verificar si el usuario actual es el creador del evento
+  const isOwner = user && evento?.createdBy === user.uid;
 
   // Carga los datos del evento desde la API
   useEffect(() => {
@@ -96,6 +109,71 @@ export default function DetalleEvento() {
     }
 
     setComentarios((prev) => prev.filter((c) => c.id !== commentId));
+  };
+
+  // Activa el modo de edición del evento
+  const handleEditClick = () => {
+    if (!isOwner) return;
+    setIsEditing(true);
+  };
+
+  // Cancela la edición del evento
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  // Guarda los cambios del evento (llamado desde el formulario de edición)
+  const handleSaveEdit = async (data: Partial<Invitation>) => {
+    const res = await fetch(`/api/invitations/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Error al guardar los cambios");
+    }
+
+    // Actualizar el evento en el estado local
+    setEvento((prev) => prev ? { ...prev, ...data } : null);
+    setIsEditing(false);
+  };
+
+  // Muestra el modal de confirmación de eliminación
+  const handleDeleteClick = () => {
+    if (!isOwner) return;
+    setShowDeleteModal(true);
+  };
+
+  // Confirma la eliminación del evento
+  const handleDeleteConfirm = async () => {
+    setDeletingEvent(true);
+    try {
+      const res = await fetch(`/api/invitations/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Error al eliminar el evento");
+      }
+
+      // Redirigir al dashboard después de eliminar
+      router.push("/dashboard/invitaciones");
+      router.refresh();
+    } catch (error) {
+      console.error("Error al eliminar evento:", error);
+      alert("Error al eliminar el evento");
+    } finally {
+      setDeletingEvent(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  // Cancela la eliminación del evento
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
   };
 
   // Calcula los días que faltan para el evento
@@ -171,6 +249,21 @@ export default function DetalleEvento() {
         </Link>
       </div>
     );
+
+  // Mostrar formulario de edición si está en modo edición
+  if (isEditing) {
+    return (
+      <div style={{ paddingTop: "100px", paddingBottom: "60px", paddingLeft: "20px", paddingRight: "20px" }}>
+        <div style={{ maxWidth: "680px", margin: "0 auto" }}>
+          <EventEditForm
+            event={evento}
+            onSave={handleSaveEdit}
+            onCancel={handleCancelEdit}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -508,19 +601,24 @@ export default function DetalleEvento() {
                 desc: "Envía el enlace a tus invitados",
                 color: "#38bdf8",
               },
-              {
-                icon: "✏️",
-                label: "Editar evento",
-                desc: "Modifica los detalles",
-                color: "#a78bfa",
-              },
-              {
-                icon: "🗑",
-                label: "Eliminar evento",
-                desc: "Esta acción no se puede deshacer",
-                color: "#f43f5e",
-              },
-            ].map((accion, i) => (
+              // Solo mostrar botones de editar y eliminar si el usuario es el creador
+              ...(isOwner ? [
+                {
+                  icon: "✏️",
+                  label: "Editar evento",
+                  desc: "Modifica los detalles",
+                  color: "#a78bfa",
+                  action: handleEditClick,
+                },
+                {
+                  icon: "🗑",
+                  label: "Eliminar evento",
+                  desc: "Esta acción no se puede deshacer",
+                  color: "#f43f5e",
+                  action: handleDeleteClick,
+                },
+              ] : []),
+            ].map((accion: any, i: number) => (
               <button
                 key={i}
                 type="button"
@@ -530,16 +628,19 @@ export default function DetalleEvento() {
                   borderRadius: "12px",
                   backgroundColor: "#09090b",
                   border: "1px solid #27272a",
-                  cursor: "pointer",
+                  cursor: accion.action ? "pointer" : "default",
                   display: "flex",
                   alignItems: "center",
                   gap: "14px",
                   textAlign: "left",
                   transition: "border-color 0.2s, background-color 0.2s",
                 }}
+                onClick={accion.action}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = accion.color;
-                  e.currentTarget.style.backgroundColor = "#18181b";
+                  if (accion.action) {
+                    e.currentTarget.style.borderColor = accion.color;
+                    e.currentTarget.style.backgroundColor = "#18181b";
+                  }
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = "#27272a";
@@ -777,11 +878,124 @@ export default function DetalleEvento() {
               {evento.id}
             </span>
           </p>
-          <p style={{ color: "#3f3f46", fontSize: "11px", margin: 0 }}>
+<p style={{ color: "#3f3f46", fontSize: "11px", margin: 0 }}>
             AFTER-REWIND © 2026 — Captura la esencia
           </p>
         </div>
       </div>
+
+      {/* Modal de confirmación de eliminación del evento */}
+      {showDeleteModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={handleDeleteCancel}
+        >
+          <div
+            style={{
+              backgroundColor: "#18181b",
+              border: "1px solid #3f3f46",
+              borderRadius: "16px",
+              padding: "24px",
+              maxWidth: "400px",
+              width: "90%",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: "center", marginBottom: "24px" }}>
+              <div
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  borderRadius: "50%",
+                  backgroundColor: "#fef2f2",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "16px",
+                }}
+              >
+                <span style={{ fontSize: "32px" }}>⚠️</span>
+              </div>
+              <h3
+                style={{
+                  color: "#fafafa",
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  margin: 0,
+                  marginBottom: "8px",
+                }}
+              >
+                ¿Eliminar evento?
+              </h3>
+              <p style={{ color: "#a1a1aa", fontSize: "14px", margin: 0 }}>
+                ¿Estás seguro de que quieres eliminar el evento <strong style={{ color: "#E0B046" }}>{evento.title}</strong>? Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+              <button
+                onClick={handleDeleteCancel}
+                disabled={deletingEvent}
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "10px",
+                  backgroundColor: "transparent",
+                  border: "1px solid #3f3f46",
+                  color: "#a1a1aa",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: deletingEvent ? "not-allowed" : "pointer",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#52525b";
+                  e.currentTarget.style.color = "#fafafa";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#3f3f46";
+                  e.currentTarget.style.color = "#a1a1aa";
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deletingEvent}
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "10px",
+                  backgroundColor: deletingEvent ? "#52525b" : "#f43f5e",
+                  border: "none",
+                  color: "#ffffff",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: deletingEvent ? "not-allowed" : "pointer",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  if (!deletingEvent) e.currentTarget.style.backgroundColor = "#e11d48";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = deletingEvent ? "#52525b" : "#f43f5e";
+                }}
+              >
+                {deletingEvent ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
