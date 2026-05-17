@@ -14,6 +14,8 @@ function PublicHeder() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  // Estado para controlar la visibilidad del menú desplegable del usuario
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -64,14 +66,42 @@ function PublicHeder() {
           </Link>
         )}
 
+        {/* Caja de usuario con menú desplegable cuando está autenticado */}
         {!isAuthPage && !loading && user && (
-          <button 
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className={styles.navCta}
-          >
-            {loggingOut ? "CERRANDO..." : "CERRAR SESIÓN"}
-          </button>
+          <div className={styles.userBox}>
+            {/* Contenedor clickeable para abrir/cerrar el menú */}
+            <div 
+              className={styles.userBoxContent}
+              onClick={() => setShowUserMenu(!showUserMenu)}
+            >
+              {/* Avatar genérico del usuario (icono) */}
+              <div className={styles.userAvatar}>
+                👤
+              </div>
+              {/* Nombre del usuario (displayName o parte del email) */}
+              <span className={styles.userName}>
+                {user.displayName || user.email?.split('@')[0] || "Usuario"}
+              </span>
+            </div>
+
+            {/* Menú desplegable con opciones del usuario */}
+            {showUserMenu && (
+              <div className={styles.dropdown}>
+                {/* Mostrar el email del usuario */}
+                <div className={styles.dropdownHeader}>
+                  <span className={styles.dropdownEmail}>{user.email}</span>
+                </div>
+                {/* Botón para cerrar sesión */}
+                <button 
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className={styles.dropdownLogout}
+                >
+                  {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </nav>
     </header>
