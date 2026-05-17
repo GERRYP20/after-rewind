@@ -22,4 +22,10 @@ export interface Invitation {
   updatedAt?: string; // Fecha de última actualización (opcional)
   description?: string; // Descripción del evento (opcional)
   category?: string; // Categoría del evento (opcional)
+  
+  // Visibility: público (cualquiera con código se une) o privado (requiere aprobación)
+  // Por defecto es 'public' para eventos existentes sin este campo
+  visibility?: 'public' | 'private';
+  // Contador de invitados confirmados
+  guestCount?: number;
 }

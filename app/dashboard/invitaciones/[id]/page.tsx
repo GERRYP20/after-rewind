@@ -43,6 +43,15 @@ export default function DetalleEvento() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState(false);
 
+  // Estados para gestión de invitados
+  const [guestsData, setGuestsData] = useState<{
+    confirmed: any[];
+    pending: any[];
+    isOwner: boolean;
+    guestCount: number;
+  } | null>(null);
+  const [processingGuest, setProcessingGuest] = useState<string | null>(null);
+
   // Verificar si el usuario actual es el creador del evento
   const isOwner = user && evento?.createdBy === user.uid;
 
@@ -64,6 +73,16 @@ export default function DetalleEvento() {
         if (!data.error) setComentarios(data);
       });
   }, [id]);
+
+  // Carga los invitados del evento
+  useEffect(() => {
+    if (!evento) return;
+    fetch(`/api/invitations/${id}/guests`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) setGuestsData(data);
+      });
+  }, [id, evento]);
 
   // Copia el código de acceso al portapapeles
   const copiarCodigo = () => {
@@ -174,6 +193,58 @@ export default function DetalleEvento() {
   // Cancela la eliminación del evento
   const handleDeleteCancel = () => {
     setShowDeleteModal(false);
+  };
+
+  // Aprueba a un invitado pendiente
+  const handleApproveGuest = async (guestDocId: string) => {
+    setProcessingGuest(guestDocId);
+    try {
+      const res = await fetch(`/api/invitations/${id}/guests`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guestDocId, action: "approve" }),
+      });
+
+      if (res.ok) {
+        // Recargar los datos de invitados
+        const data = await fetch(`/api/invitations/${id}/guests`).then(r => r.json());
+        if (!data.error) setGuestsData(data);
+      } else {
+        alert("Error al aprobar el invitado");
+      }
+    } catch (error) {
+      console.error("Error approving guest:", error);
+      alert("Error al aprobar el invitado");
+    } finally {
+      setProcessingGuest(null);
+    }
+  };
+
+  // Rechaza a un invitado pendiente
+  const handleRejectGuest = async (guestDocId: string) => {
+    if (!confirm("¿Estás seguro de que quieres rechazar esta solicitud?")) return;
+    
+    setProcessingGuest(guestDocId);
+    try {
+      const res = await fetch(`/api/invitations/${id}/guests`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guestDocId, action: "reject" }),
+      });
+
+      if (res.ok) {
+        // Recargar los datos de invitados
+        const data = await fetch(`/api/invitations/${id}/guests`).then(r => r.json());
+        if (!data.error) setGuestsData(data);
+      } else {
+        alert("Error al rechazar el invitado");
+      }
+    } catch (error) {
+      console.error("Error rejecting guest:", error);
+      alert("Error al rechazar el invitado");
+    } finally {
+      setProcessingGuest(null);
+    }
   };
 
   // Calcula los días que faltan para el evento
@@ -681,6 +752,239 @@ export default function DetalleEvento() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* ── Sección: Invitados ─────────────────────── */}
+        <div
+          style={{
+            backgroundColor: "#18181b",
+            border: "1px solid #3f3f46",
+            borderRadius: "20px",
+            padding: "28px",
+            marginTop: "20px",
+          }}
+        >
+          {/* Encabezado de la sección */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "20px",
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  color: "#71717a",
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.15em",
+                  margin: "0 0 4px 0",
+                }}
+              >
+                ✦ INVITADOS
+              </p>
+              <h2
+                style={{
+                  color: "white",
+                  fontSize: "18px",
+                  fontWeight: 900,
+                  margin: 0,
+                }}
+              >
+                {guestsData?.guestCount || evento?.guestCount || 0} Confirmados
+              </h2>
+            </div>
+            {/* Badge de visibilidad */}
+            <span
+              style={{
+                padding: "6px 12px",
+                borderRadius: "8px",
+                fontSize: "11px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                backgroundColor: evento?.visibility === "private" 
+                  ? "rgba(167, 139, 250, 0.15)" 
+                  : "rgba(16, 185, 129, 0.15)",
+                color: evento?.visibility === "private" 
+                  ? "#a78bfa" 
+                  : "#10b981",
+                border: `1px solid ${evento?.visibility === "private" 
+                  ? "rgba(167, 139, 250, 0.3)" 
+                  : "rgba(16, 185, 129, 0.3)"}`,
+              }}
+            >
+              {evento?.visibility === "private" ? "🔒 Privado" : "🌐 Público"}
+            </span>
+          </div>
+
+          {/* Lista de invitados confirmados */}
+          {guestsData?.confirmed && guestsData.confirmed.length > 0 && (
+            <div style={{ marginBottom: "20px" }}>
+              <p style={{ color: "#52525b", fontSize: "11px", marginBottom: "12px", fontWeight: 600 }}>
+                Lista de confirmados
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {guestsData.confirmed.map((guest: any) => (
+                  <div
+                    key={guest.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "12px",
+                      backgroundColor: "#09090b",
+                      borderRadius: "10px",
+                      border: "1px solid #27272a",
+                    }}
+                  >
+                    {/* Avatar placeholder */}
+                    <div
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        backgroundColor: "#27272a",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "14px",
+                      }}
+                    >
+                      👤
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ color: "white", fontSize: "13px", fontWeight: 600, margin: 0 }}>
+                        {guest.userName}
+                      </p>
+                    </div>
+                    <span
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        backgroundColor: "rgba(16, 185, 129, 0.15)",
+                        color: "#10b981",
+                      }}
+                    >
+                      Confirmado
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Lista de invitados pendientes (solo para el creador) */}
+          {guestsData?.isOwner && guestsData?.pending && guestsData.pending.length > 0 && (
+            <div>
+              <p style={{ color: "#f59e0b", fontSize: "11px", marginBottom: "12px", fontWeight: 600 }}>
+                Solicitudes pendientes ({guestsData.pending.length})
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {guestsData.pending.map((guest: any) => (
+                  <div
+                    key={guest.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "12px",
+                      backgroundColor: "#09090b",
+                      borderRadius: "10px",
+                      border: "1px solid #27272a",
+                    }}
+                  >
+                    {/* Avatar placeholder */}
+                    <div
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        backgroundColor: "#27272a",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "14px",
+                      }}
+                    >
+                      👤
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ color: "white", fontSize: "13px", fontWeight: 600, margin: 0 }}>
+                        {guest.userName}
+                      </p>
+                      <p style={{ color: "#52525b", fontSize: "11px", margin: "2px 0 0 0" }}>
+                        Esperando aprobación
+                      </p>
+                    </div>
+                    {/* Botones de aprobar/rechazar */}
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        onClick={() => handleApproveGuest(guest.id)}
+                        disabled={processingGuest === guest.id}
+                        style={{
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          backgroundColor: "transparent",
+                          border: "1px solid #E0B046",
+                          color: "#E0B046",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: processingGuest === guest.id ? "not-allowed" : "pointer",
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "rgba(224, 176, 70, 0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
+                      >
+                        Aprobar
+                      </button>
+                      <button
+                        onClick={() => handleRejectGuest(guest.id)}
+                        disabled={processingGuest === guest.id}
+                        style={{
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          backgroundColor: "transparent",
+                          border: "1px solid #f43f5e",
+                          color: "#f43f5e",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: processingGuest === guest.id ? "not-allowed" : "pointer",
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "rgba(244, 63, 94, 0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
+                      >
+                        Rechazar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Mensaje si no hay invitados */}
+          {(!guestsData?.confirmed || guestsData.confirmed.length === 0) && 
+           (!guestsData?.pending || guestsData.pending.length === 0) && (
+            <p style={{ color: "#52525b", fontSize: "13px", textAlign: "center", padding: "20px" }}>
+              Aún no hay invitados confirmados
+            </p>
+          )}
         </div>
 
         {/* ── Sección: Galería de fotos (placeholder) ─────────────────────── */}

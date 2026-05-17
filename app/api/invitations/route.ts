@@ -45,11 +45,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log("Creating invitation for userId:", userId);
 
     const body = await request.json();
-    const { title, date, location, accessCode } = body;
+    const { title, date, location, accessCode, category, visibility, description } = body;
 
     if (!title || !date || !location || !accessCode) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
     }
+
+    // Debug: verificar que.visibility se está recibiendo
+    console.log("DEBUG - visibility recibida:", visibility);
+    console.log("DEBUG - category recibida:", category);
 
     const invitationId = await InvitationRepository.create({
       title,
@@ -57,6 +61,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       location,
       accessCode,
       createdBy: userId,
+      // Incluir campos adicionales del formulario
+      category: category || "otro",
+      visibility: visibility || "public", // Por defecto público para eventos antiguos
+      description: description || "",
+      guestCount: 0, // Inicializar contador de invitados en 0
     });
 
     return NextResponse.json({ id: invitationId, message: "Invitación creada" }, { status: 201 });

@@ -30,6 +30,9 @@ export default function NuevaInvitacion() {
   // Categoría seleccionada por el usuario
   const [categoriaActiva, setCategoriaActiva] = useState<string>("boda");
 
+  // Visibilidad del evento: público (cualquiera se une) o privado (requiere aprobación)
+  const [visibility, setVisibility] = useState<'public' | 'private'>("public");
+
   // Fotos "subidas" (solo UI, no funcional)
   const [fotosPreview, setFotosPreview] = useState<string[]>([]);
 
@@ -65,7 +68,12 @@ export default function NuevaInvitacion() {
       const res = await fetch("/api/invitations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, category: categoriaActiva }),
+        body: JSON.stringify({ 
+          ...formData, 
+          category: categoriaActiva,
+          visibility: visibility,
+          guestCount: 0, // Inicializar contador de invitados en 0
+        }),
       });
       if (res.ok) {
         router.push("/dashboard");
@@ -218,6 +226,72 @@ export default function NuevaInvitacion() {
                       {cat.label}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* ── Selector de visibilidad ──── */}
+              <div style={{ marginBottom: "28px" }}>
+                <p style={labelStyle}>Visibilidad del evento</p>
+                <div style={{ display: "flex", gap: "12px" }}>
+                  {/* Opción: Público */}
+                  <button
+                    type="button"
+                    onClick={() => setVisibility("public")}
+                    style={{
+                      flex: 1,
+                      padding: "16px",
+                      borderRadius: "12px",
+                      border: `2px solid ${visibility === "public" ? "#E0B046" : "#27272a"}`,
+                      backgroundColor: visibility === "public" ? "rgba(224, 176, 70, 0.08)" : "#09090b",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                      <span style={{ fontSize: "20px" }}>🌐</span>
+                      <span style={{
+                        color: visibility === "public" ? "#E0B046" : "#fafafa",
+                        fontWeight: 700,
+                        fontSize: "14px",
+                      }}>
+                        Público
+                      </span>
+                    </div>
+                    <p style={{ color: "#71717a", fontSize: "12px", margin: 0 }}>
+                      Cualquiera con el código se une automáticamente
+                    </p>
+                  </button>
+
+                  {/* Opción: Privado */}
+                  <button
+                    type="button"
+                    onClick={() => setVisibility("private")}
+                    style={{
+                      flex: 1,
+                      padding: "16px",
+                      borderRadius: "12px",
+                      border: `2px solid ${visibility === "private" ? "#E0B046" : "#27272a"}`,
+                      backgroundColor: visibility === "private" ? "rgba(224, 176, 70, 0.08)" : "#09090b",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                      <span style={{ fontSize: "20px" }}>🔒</span>
+                      <span style={{
+                        color: visibility === "private" ? "#E0B046" : "#fafafa",
+                        fontWeight: 700,
+                        fontSize: "14px",
+                      }}>
+                        Privado
+                      </span>
+                    </div>
+                    <p style={{ color: "#71717a", fontSize: "12px", margin: 0 }}>
+                      Los invitados requieren tu aprobación manual
+                    </p>
+                  </button>
                 </div>
               </div>
 
