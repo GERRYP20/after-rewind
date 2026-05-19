@@ -179,7 +179,7 @@ export default function DetalleEvento() {
       }
 
       // Redirigir al dashboard después de eliminar
-      router.push("/dashboard/invitaciones");
+      router.push("/dashboard");
       router.refresh();
     } catch (error) {
       console.error("Error al eliminar evento:", error);
