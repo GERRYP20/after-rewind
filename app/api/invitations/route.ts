@@ -45,8 +45,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log("Creating invitation for userId:", userId);
 
     const body = await request.json();
-    const { title, date, location, accessCode, category, visibility, description } = body;
+    // Extraemos todos los campos del body, incluyendo imageUrl para la imagen de portada
+    const { title, date, location, accessCode, category, visibility, description, imageUrl } = body;
 
+    // Validamos que los campos requeridos existan
     if (!title || !date || !location || !accessCode) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
     }
@@ -54,7 +56,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Debug: verificar que.visibility se está recibiendo
     console.log("DEBUG - visibility recibida:", visibility);
     console.log("DEBUG - category recibida:", category);
+    console.log("DEBUG - imageUrl recibida:", imageUrl);
 
+    // Guardamos la invitación en Firestore incluyendo la URL de la imagen de Cloudinary
     const invitationId = await InvitationRepository.create({
       title,
       date,
@@ -66,6 +70,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       visibility: visibility || "public", // Por defecto público para eventos antiguos
       description: description || "",
       guestCount: 0, // Inicializar contador de invitados en 0
+      imageUrl: imageUrl || "", // Guardamos la URL de la imagen de portada
     });
 
     return NextResponse.json({ id: invitationId, message: "Invitación creada" }, { status: 201 });

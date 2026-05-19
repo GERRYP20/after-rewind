@@ -76,11 +76,22 @@ export const InvitationRepository = {
     return mapInvitation(doc);
   },
 
+  // Método para obtener varias invitaciones por sus IDs
+  async getByIds(ids: string[]): Promise<Invitation[]> {
+    if (ids.length === 0) return [];
+
+    // Firestore limit: 'in' queries can have up to 30 values
+    // If we have more, we would need to chunk them, but for now we'll assume a reasonable number
+    const snapshots = await db
+      .collection(COLLECTION_NAME)
+      .where("__name__", "in", ids)
+      .get();
+
+    return snapshots.docs.map(mapInvitation);
+  },
+
   // Método para actualizar una invitación existente
-  // @param id - ID del documento en Firestore
-  // @param data - Datos a actualizar (parcial del tipo Invitation)
   async update(id: string, data: Partial<Invitation>): Promise<void> {
-    // Filtramos las propiedades que no queremos incluir en la actualización
     const updateData = { ...data };
     
     // Eliminar campos que no deben actualizarse
@@ -89,8 +100,8 @@ export const InvitationRepository = {
     delete updateData.createdBy;
     delete updateData.accessCode;
     
-    // Agregar fecha de actualización (Firestore acepta Date objects)
-    updateData.updatedAt = new Date() as unknown as string;
+    // Agregar fecha de actualización
+    updateData.updatedAt = new Date().toISOString();
     
     await db.collection(COLLECTION_NAME).doc(id).update(updateData);
   },

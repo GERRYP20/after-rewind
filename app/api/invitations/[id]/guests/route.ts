@@ -12,6 +12,7 @@ import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebase-admin";
 import { InvitationRepository } from "@/lib/invitations/invitation.repository";
 import { EventGuestRepository } from "@/lib/guests/event-guest.repository";
+import { EventGuest } from "@/lib/guests/event-guest.types";
 
 // Nombre de la cookie de sesión
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
@@ -56,7 +57,7 @@ export async function GET(
     const isOwner = event.createdBy === currentUserId;
 
     // 6. Si es el creador, obtener también los pendientes
-    let pendingGuests: any[] = [];
+    let pendingGuests: EventGuest[] = [];
     if (isOwner) {
       pendingGuests = await EventGuestRepository.getByEventIdAndStatus(eventId, 'pending');
     }

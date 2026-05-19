@@ -56,7 +56,7 @@ function PublicHeder() {
             {/* Actualizamos los enlaces a las rutas reales que creamos */}
             <li><Link href="/dashboard">Mis Eventos</Link></li>
             <li><Link href="/dashboard/invitaciones/nueva">Crear Evento</Link></li>
-            <li><Link href="#">Invitaciones</Link></li>
+            <li><Link href="/dashboard/invitaciones/participando">Invitaciones</Link></li>
           </ul>
         )}
         

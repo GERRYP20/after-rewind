@@ -2,9 +2,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/lib/use-auth";
 import { Invitation } from "@/lib/invitations/invitation.types";
 import { Comment } from "@/lib/comments/comment.types";
+import { EventGuest } from "@/lib/guests/event-guest.types";
 import CommentForm from "@/components/comments/CommentForm";
 import CommentList from "@/components/comments/CommentList";
 import EventEditForm from "@/components/invitations/EventEditForm";
@@ -21,6 +23,15 @@ const COVER_STYLES: Record<string, string> = {
   default: "linear-gradient(135deg, #92400e 0%, #b45309 50%, #fbbf24 100%)",
 };
 
+// ─── Interfaz para las acciones rápidas ───────────────────
+interface QuickAction {
+  icon: string;
+  label: string;
+  desc: string;
+  color: string;
+  action?: () => void;
+}
+
 // ─── Estadísticas de placeholder (UI estática, no funcional aún) ──────────────
 const STATS = [
   { label: "Invitados", value: "—", icon: "👥" },
@@ -29,7 +40,8 @@ const STATS = [
 ];
 
 export default function DetalleEvento() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   const router = useRouter();
   const { user } = useAuth();
   
@@ -45,15 +57,27 @@ export default function DetalleEvento() {
 
   // Estados para gestión de invitados
   const [guestsData, setGuestsData] = useState<{
-    confirmed: any[];
-    pending: any[];
+    confirmed: EventGuest[];
+    pending: EventGuest[];
     isOwner: boolean;
     guestCount: number;
   } | null>(null);
   const [processingGuest, setProcessingGuest] = useState<string | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
 
   // Verificar si el usuario actual es el creador del evento
   const isOwner = user && evento?.createdBy === user.uid;
+
+  // Determinar el estado del usuario actual en este evento
+  const currentUserGuestStatus = useMemo(() => {
+    if (isOwner) return "owner";
+    if (!guestsData || !user) return null;
+    
+    if (guestsData.confirmed.some(g => g.userId === user.uid)) return "confirmed";
+    if (guestsData.pending.some(g => g.userId === user.uid)) return "pending";
+    
+    return "none";
+  }, [guestsData, user, isOwner]);
 
   // Carga los datos del evento desde la API
   useEffect(() => {
@@ -67,12 +91,15 @@ export default function DetalleEvento() {
 
   // Carga los comentarios del evento
   useEffect(() => {
+    // Solo cargar comentarios si el usuario es dueño o está confirmado
+    if (currentUserGuestStatus !== "owner" && currentUserGuestStatus !== "confirmed") return;
+
     fetch(`/api/invitations/${id}/comments`)
       .then((res) => res.json())
       .then((data) => {
         if (!data.error) setComentarios(data);
       });
-  }, [id]);
+  }, [id, currentUserGuestStatus]);
 
   // Carga los invitados del evento
   useEffect(() => {
@@ -83,6 +110,37 @@ export default function DetalleEvento() {
         if (!data.error) setGuestsData(data);
       });
   }, [id, evento]);
+
+  // Función para unirse al evento
+  const handleJoinEvent = async () => {
+    if (!evento || isJoining) return;
+    
+    setIsJoining(true);
+    try {
+      const res = await fetch(`/api/invitations/access/${evento.accessCode}`, {
+        method: "POST"
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        // Recargar datos de invitados para actualizar el estado UI
+        const guestsRes = await fetch(`/api/invitations/${id}/guests`);
+        const guestsData = await guestsRes.json();
+        if (!guestsData.error) setGuestsData(guestsData);
+        
+        if (data.status === "pending") {
+          alert("Solicitud enviada. El creador debe aprobarte.");
+        }
+      } else {
+        alert(data.error || "Error al unirse al evento");
+      }
+    } catch (error) {
+      console.error("Error joining event:", error);
+      alert("Error al intentar unirse al evento");
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   // Copia el código de acceso al portapapeles
   const copiarCodigo = () => {
@@ -196,7 +254,8 @@ export default function DetalleEvento() {
   };
 
   // Aprueba a un invitado pendiente
-  const handleApproveGuest = async (guestDocId: string) => {
+  const handleApproveGuest = async (guestDocId?: string) => {
+    if (!guestDocId) return;
     setProcessingGuest(guestDocId);
     try {
       const res = await fetch(`/api/invitations/${id}/guests`, {
@@ -221,7 +280,8 @@ export default function DetalleEvento() {
   };
 
   // Rechaza a un invitado pendiente
-  const handleRejectGuest = async (guestDocId: string) => {
+  const handleRejectGuest = async (guestDocId?: string) => {
+    if (!guestDocId) return;
     if (!confirm("¿Estás seguro de que quieres rechazar esta solicitud?")) return;
     
     setProcessingGuest(guestDocId);
@@ -340,12 +400,12 @@ export default function DetalleEvento() {
     <div
       style={{ minHeight: "100vh", paddingTop: "5rem", paddingBottom: "6rem" }}
     >
-      {/* HERO: portada grande con gradiente de color*/}
+      {/* HERO: portada grande con imagen o gradiente de color*/}
       <div
         style={{
           width: "100%",
           minHeight: "340px",
-          background: coverGradient,
+          background: evento.imageUrl ? "none" : coverGradient,
           position: "relative",
           display: "flex",
           flexDirection: "column",
@@ -354,6 +414,19 @@ export default function DetalleEvento() {
           overflow: "hidden",
         }}
       >
+        {/* Imagen de fondo de Cloudinary si existe */}
+        {evento.imageUrl && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+            <Image 
+              src={evento.imageUrl} 
+              alt={evento.title} 
+              fill 
+              className="object-cover"
+              priority
+            />
+          </div>
+        )}
+
         {/* Patrón de textura superpuesto para darle profundidad */}
         <div
           style={{
@@ -361,6 +434,7 @@ export default function DetalleEvento() {
             inset: 0,
             backgroundImage: `radial-gradient(circle at 20% 50%, rgba(0,0,0,0.3) 0%, transparent 60%),
                             radial-gradient(circle at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 50%)`,
+            zIndex: 1,
           }}
         />
 
@@ -371,8 +445,9 @@ export default function DetalleEvento() {
             bottom: 0,
             left: 0,
             right: 0,
-            height: "60%",
-            background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+            height: "100%",
+            background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)",
+            zIndex: 1,
           }}
         />
 
@@ -444,7 +519,7 @@ export default function DetalleEvento() {
               letterSpacing: "-0.04em",
               lineHeight: 1,
               margin: "0 0 16px 0",
-              textShadow: "0 2px 20px rgba(0,0,0,0.4)",
+              textShadow: "0 2px 20px rgba(0,0,0,0.6)",
             }}
           >
             {evento.title}
@@ -481,711 +556,784 @@ export default function DetalleEvento() {
         </div>
       </div>
 
-      {/* ── CONTENIDO PRINCIPAL ─────────────────────────────────────────────── */}
+      {/* ── CONTENIDO DINÁMICO SEGÚN ESTADO DE INVITADO ────────────────────── */}
       <div style={{ maxWidth: "960px", margin: "0 auto", padding: "0 24px" }}>
-        {/* ── STATS ROW ─────────────────────────────────────────────────────── */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "16px",
-            marginTop: "-28px" /* sube para solaparse con el hero */,
-            marginBottom: "32px",
-            position: "relative",
-            zIndex: 10,
-          }}
-        >
-          {STATS.map((stat, i) => (
-            <div
-              key={i}
-              style={{
-                backgroundColor: "#18181b",
-                border: "1px solid #3f3f46",
-                borderRadius: "16px",
-                padding: "20px 24px",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-              }}
-            >
-              <p
-                style={{
-                  color: "#71717a",
-                  fontSize: "10px",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  margin: "0 0 8px 0",
-                }}
-              >
-                {stat.icon} {stat.label}
-              </p>
-              <p
-                style={{
-                  color: "white",
-                  fontSize: "28px",
-                  fontWeight: 900,
-                  margin: 0,
-                }}
-              >
-                {/* Muestra los días reales para el campo correspondiente */}
-                {stat.label === "Días para el evento"
-                  ? diasRestantes !== null && diasRestantes > 0
-                    ? diasRestantes
-                    : diasRestantes === 0
-                      ? "¡Hoy!"
-                      : "Pasado"
-                  : stat.value}
-              </p>
+        
+        {/* CASO A: El usuario NO está unido o está PENDIENTE */}
+        {(currentUserGuestStatus === "none" || currentUserGuestStatus === "pending") ? (
+          <div style={{
+            marginTop: "40px",
+            backgroundColor: "#18181b",
+            border: "1px solid #3f3f46",
+            borderRadius: "24px",
+            padding: "48px 32px",
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "24px"
+          }}>
+            <div style={{ fontSize: "64px" }}>
+              {currentUserGuestStatus === "none" ? "👋" : "⏳"}
             </div>
-          ))}
-        </div>
-
-        {/* ── GRID PRINCIPAL: código + acciones + galería ────────────────── */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "20px",
-          }}
-        >
-          {/* ── Tarjeta: Código de acceso ──────────────────────────────────── */}
-          <div
-            style={{
-              backgroundColor: "#18181b",
-              border: "1px solid #3f3f46",
-              borderRadius: "20px",
-              padding: "28px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-            }}
-          >
-            <p
-              style={{
-                color: "#71717a",
-                fontSize: "10px",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: "0.15em",
-                margin: 0,
-              }}
-            >
-              Código de acceso
-            </p>
-
-            {/* Display grande del código */}
-            <div
-              style={{
-                background: "linear-gradient(135deg, #09090b, #18181b)",
-                border: "1px solid #27272a",
-                borderRadius: "14px",
-                padding: "28px",
-                textAlign: "center",
-              }}
-            >
-              <p
-                style={{
-                  color: "#f59e0b",
-                  fontSize: "clamp(1.8rem, 4vw, 3rem)",
-                  fontFamily: "monospace",
-                  fontWeight: 900,
-                  letterSpacing: "0.15em",
-                  margin: 0,
-                  textShadow: "0 0 30px rgba(245,158,11,0.3)",
-                }}
-              >
-                {evento.accessCode}
+            <div>
+              <h2 style={{ color: "white", fontSize: "24px", fontWeight: 900, margin: "0 0 8px 0" }}>
+                {currentUserGuestStatus === "none" 
+                  ? "¡Te han invitado a este evento!" 
+                  : "Solicitud enviada"}
+              </h2>
+              <p style={{ color: "#a1a1aa", fontSize: "15px", maxWidth: "400px", margin: "0 auto", lineHeight: 1.6 }}>
+                {currentUserGuestStatus === "none"
+                  ? `Para ver las fotos y participar en el álbum de ${evento.title}, necesitas unirte.`
+                  : "Estamos esperando que el creador del evento apruebe tu solicitud de acceso."}
               </p>
             </div>
 
-            {/* Botón de copiar código */}
-            <button
-              onClick={copiarCodigo}
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "12px",
-                backgroundColor: copiado ? "#052e16" : "rgba(245,158,11,0.1)",
-                border: `1px solid ${copiado ? "#16a34a" : "rgba(245,158,11,0.3)"}`,
-                color: copiado ? "#4ade80" : "#f59e0b",
-                fontSize: "12px",
-                fontWeight: 900,
-                textTransform: "uppercase",
-                letterSpacing: "0.15em",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-            >
-              {copiado ? "✓ ¡Copiado!" : "⎘ Copiar código"}
-            </button>
-
-            {/* Instrucción para los invitados */}
-            <p
-              style={{
-                color: "#52525b",
-                fontSize: "11px",
-                textAlign: "center",
-                margin: 0,
-                lineHeight: 1.5,
-              }}
-            >
-              Comparte este código con tus invitados para que puedan acceder al
-              álbum del evento.
-            </p>
-          </div>
-
-          {/* ── Tarjeta: Acciones rápidas ──────────────────────────────────── */}
-          <div
-            style={{
-              backgroundColor: "#18181b",
-              border: "1px solid #3f3f46",
-              borderRadius: "20px",
-              padding: "28px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}
-          >
-            <p
-              style={{
-                color: "#71717a",
-                fontSize: "10px",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: "0.15em",
-                margin: "0 0 8px 0",
-              }}
-            >
-              Acciones
-            </p>
-
-            {/* Lista de acciones disponibles */}
-            {[
-              {
-                icon: "🖼",
-                label: "Ver álbum de fotos",
-                desc: "Galería completa del evento",
-                color: "#f59e0b",
-              },
-              {
-                icon: "✉️",
-                label: "Compartir invitación",
-                desc: "Envía el enlace a tus invitados",
-                color: "#38bdf8",
-              },
-              // Solo mostrar botones de editar y eliminar si el usuario es el creador
-              ...(isOwner ? [
-                {
-                  icon: "✏️",
-                  label: "Editar evento",
-                  desc: "Modifica los detalles",
-                  color: "#a78bfa",
-                  action: handleEditClick,
-                },
-                {
-                  icon: "🗑",
-                  label: "Eliminar evento",
-                  desc: "Esta acción no se puede deshacer",
-                  color: "#f43f5e",
-                  action: handleDeleteClick,
-                },
-              ] : []),
-            ].map((accion: any, i: number) => (
+            {currentUserGuestStatus === "none" && (
               <button
-                key={i}
-                type="button"
+                onClick={handleJoinEvent}
+                disabled={isJoining}
                 style={{
-                  width: "100%",
-                  padding: "14px 16px",
-                  borderRadius: "12px",
-                  backgroundColor: "#09090b",
-                  border: "1px solid #27272a",
-                  cursor: accion.action ? "pointer" : "default",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  textAlign: "left",
-                  transition: "border-color 0.2s, background-color 0.2s",
-                }}
-                onClick={accion.action}
-                onMouseEnter={(e) => {
-                  if (accion.action) {
-                    e.currentTarget.style.borderColor = accion.color;
-                    e.currentTarget.style.backgroundColor = "#18181b";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#27272a";
-                  e.currentTarget.style.backgroundColor = "#09090b";
+                  padding: "16px 40px",
+                  borderRadius: "14px",
+                  backgroundColor: "#E0B046",
+                  color: "#000",
+                  fontSize: "14px",
+                  fontWeight: 900,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  border: "none",
+                  cursor: isJoining ? "not-allowed" : "pointer",
+                  transition: "transform 0.2s",
+                  boxShadow: "0 10px 30px rgba(224, 176, 70, 0.2)"
                 }}
               >
-                {/* Icono con fondo de color */}
-                <span
+                {isJoining ? "Uniéndote..." : "✨ Unirse al Evento"}
+              </button>
+            )}
+
+            {currentUserGuestStatus === "pending" && (
+              <div style={{
+                padding: "12px 24px",
+                borderRadius: "10px",
+                backgroundColor: "rgba(224, 176, 70, 0.1)",
+                border: "1px solid rgba(224, 176, 70, 0.3)",
+                color: "#E0B046",
+                fontSize: "13px",
+                fontWeight: 700
+              }}>
+                Estado: Pendiente de aprobación
+              </div>
+            )}
+          </div>
+        ) : (
+          /* CASO B: El usuario es DUEÑO o está CONFIRMADO */
+          <>
+            {/* ── STATS ROW ─────────────────────────────────────────────────── */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "16px",
+                marginTop: "-28px",
+                marginBottom: "32px",
+                position: "relative",
+                zIndex: 10,
+              }}
+            >
+              {STATS.map((stat, i) => (
+                <div
+                  key={i}
                   style={{
-                    width: "36px",
-                    height: "36px",
-                    flexShrink: 0,
-                    borderRadius: "9px",
-                    backgroundColor: `${accion.color}15`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "16px",
+                    backgroundColor: "#18181b",
+                    border: "1px solid #3f3f46",
+                    borderRadius: "16px",
+                    padding: "20px 24px",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
                   }}
                 >
-                  {accion.icon}
-                </span>
-                <div>
+                  <p
+                    style={{
+                      color: "#71717a",
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.12em",
+                      margin: "0 0 8px 0",
+                    }}
+                  >
+                    {stat.icon} {stat.label}
+                  </p>
                   <p
                     style={{
                       color: "white",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      margin: "0 0 2px 0",
+                      fontSize: "28px",
+                      fontWeight: 900,
+                      margin: 0,
                     }}
                   >
-                    {accion.label}
-                  </p>
-                  <p style={{ color: "#52525b", fontSize: "11px", margin: 0 }}>
-                    {accion.desc}
+                    {/* Muestra los días reales para el campo correspondiente */}
+                    {stat.label === "Días para el evento"
+                      ? diasRestantes !== null && diasRestantes > 0
+                        ? diasRestantes
+                        : diasRestantes === 0
+                          ? "¡Hoy!"
+                          : "Pasado"
+                      : stat.value}
                   </p>
                 </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Sección: Invitados ─────────────────────── */}
-        <div
-          style={{
-            backgroundColor: "#18181b",
-            border: "1px solid #3f3f46",
-            borderRadius: "20px",
-            padding: "28px",
-            marginTop: "20px",
-          }}
-        >
-          {/* Encabezado de la sección */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "20px",
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  color: "#71717a",
-                  fontSize: "10px",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.15em",
-                  margin: "0 0 4px 0",
-                }}
-              >
-                ✦ INVITADOS
-              </p>
-              <h2
-                style={{
-                  color: "white",
-                  fontSize: "18px",
-                  fontWeight: 900,
-                  margin: 0,
-                }}
-              >
-                {guestsData?.guestCount || evento?.guestCount || 0} Confirmados
-              </h2>
+              ))}
             </div>
-            {/* Badge de visibilidad */}
-            <span
+
+            {/* ── GRID PRINCIPAL: código + acciones + galería ────────────────── */}
+            <div
               style={{
-                padding: "6px 12px",
-                borderRadius: "8px",
-                fontSize: "11px",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                backgroundColor: evento?.visibility === "private" 
-                  ? "rgba(167, 139, 250, 0.15)" 
-                  : "rgba(16, 185, 129, 0.15)",
-                color: evento?.visibility === "private" 
-                  ? "#a78bfa" 
-                  : "#10b981",
-                border: `1px solid ${evento?.visibility === "private" 
-                  ? "rgba(167, 139, 250, 0.3)" 
-                  : "rgba(16, 185, 129, 0.3)"}`,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "20px",
               }}
             >
-              {evento?.visibility === "private" ? "🔒 Privado" : "🌐 Público"}
-            </span>
-          </div>
+              {/* ── Tarjeta: Código de acceso ──────────────────────────────────── */}
+              <div
+                style={{
+                  backgroundColor: "#18181b",
+                  border: "1px solid #3f3f46",
+                  borderRadius: "20px",
+                  padding: "28px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                }}
+              >
+                <p
+                  style={{
+                    color: "#71717a",
+                    fontSize: "10px",
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.15em",
+                    margin: 0,
+                  }}
+                >
+                  Código de acceso
+                </p>
 
-          {/* Lista de invitados confirmados */}
-          {guestsData?.confirmed && guestsData.confirmed.length > 0 && (
-            <div style={{ marginBottom: "20px" }}>
-              <p style={{ color: "#52525b", fontSize: "11px", marginBottom: "12px", fontWeight: 600 }}>
-                Lista de confirmados
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {guestsData.confirmed.map((guest: any) => (
-                  <div
-                    key={guest.id}
+                {/* Display grande del código */}
+                <div
+                  style={{
+                    background: "linear-gradient(135deg, #09090b, #18181b)",
+                    border: "1px solid #27272a",
+                    borderRadius: "14px",
+                    padding: "28px",
+                    textAlign: "center",
+                  }}
+                >
+                  <p
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      padding: "12px",
-                      backgroundColor: "#09090b",
-                      borderRadius: "10px",
-                      border: "1px solid #27272a",
+                      color: "#f59e0b",
+                      fontSize: "clamp(1.8rem, 4vw, 3rem)",
+                      fontFamily: "monospace",
+                      fontWeight: 900,
+                      letterSpacing: "0.15em",
+                      margin: 0,
+                      textShadow: "0 0 30px rgba(245,158,11,0.3)",
                     }}
                   >
-                    {/* Avatar placeholder */}
-                    <div
-                      style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "50%",
-                        backgroundColor: "#27272a",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "14px",
-                      }}
-                    >
-                      👤
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: "white", fontSize: "13px", fontWeight: 600, margin: 0 }}>
-                        {guest.userName}
-                      </p>
-                    </div>
+                    {evento.accessCode}
+                  </p>
+                </div>
+
+                {/* Botón de copiar código */}
+                <button
+                  onClick={copiarCodigo}
+                  style={{
+                    width: "100%",
+                    padding: "14px",
+                    borderRadius: "12px",
+                    backgroundColor: copiado ? "#052e16" : "rgba(245,158,11,0.1)",
+                    border: `1px solid ${copiado ? "#16a34a" : "rgba(245,158,11,0.3)"}`,
+                    color: copiado ? "#4ade80" : "#f59e0b",
+                    fontSize: "12px",
+                    fontWeight: 900,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.15em",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {copiado ? "✓ ¡Copiado!" : "⎘ Copiar código"}
+                </button>
+
+                {/* Instrucción para los invitados */}
+                <p
+                  style={{
+                    color: "#52525b",
+                    fontSize: "11px",
+                    textAlign: "center",
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Comparte este código con tus invitados para que puedan acceder al
+                  álbum del evento.
+                </p>
+              </div>
+
+              {/* ── Tarjeta: Acciones rápidas ──────────────────────────────────── */}
+              <div
+                style={{
+                  backgroundColor: "#18181b",
+                  border: "1px solid #3f3f46",
+                  borderRadius: "20px",
+                  padding: "28px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <p
+                  style={{
+                    color: "#71717a",
+                    fontSize: "10px",
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.15em",
+                    margin: "0 0 8px 0",
+                  }}
+                >
+                  Acciones
+                </p>
+
+                {/* Lista de acciones disponibles */}
+                {[
+                  {
+                    icon: "🖼",
+                    label: "Ver álbum de fotos",
+                    desc: "Galería completa del evento",
+                    color: "#f59e0b",
+                  },
+                  {
+                    icon: "✉️",
+                    label: "Compartir invitación",
+                    desc: "Envía el enlace a tus invitados",
+                    color: "#38bdf8",
+                  },
+                  // Solo mostrar botones de editar y eliminar si el usuario es el creador
+                  ...(isOwner ? [
+                    {
+                      icon: "✏️",
+                      label: "Editar evento",
+                      desc: "Modifica los detalles",
+                      color: "#a78bfa",
+                      action: handleEditClick,
+                    },
+                    {
+                      icon: "🗑",
+                      label: "Eliminar evento",
+                      desc: "Esta acción no se puede deshacer",
+                      color: "#f43f5e",
+                      action: handleDeleteClick,
+                    },
+                  ] : []),
+                ].map((accion: QuickAction, i: number) => (
+                  <button
+                    key={i}
+                    type="button"
+                    style={{
+                      width: "100%",
+                      padding: "14px 16px",
+                      borderRadius: "12px",
+                      backgroundColor: "#09090b",
+                      border: "1px solid #27272a",
+                      cursor: accion.action ? "pointer" : "default",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "14px",
+                      textAlign: "left",
+                      transition: "border-color 0.2s, background-color 0.2s",
+                    }}
+                    onClick={accion.action}
+                    onMouseEnter={(e) => {
+                      if (accion.action) {
+                        e.currentTarget.style.borderColor = accion.color;
+                        e.currentTarget.style.backgroundColor = "#18181b";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#27272a";
+                      e.currentTarget.style.backgroundColor = "#09090b";
+                    }}
+                  >
+                    {/* Icono con fondo de color */}
                     <span
                       style={{
-                        padding: "4px 8px",
-                        borderRadius: "6px",
-                        fontSize: "10px",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        backgroundColor: "rgba(16, 185, 129, 0.15)",
-                        color: "#10b981",
-                      }}
-                    >
-                      Confirmado
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Lista de invitados pendientes (solo para el creador) */}
-          {guestsData?.isOwner && guestsData?.pending && guestsData.pending.length > 0 && (
-            <div>
-              <p style={{ color: "#f59e0b", fontSize: "11px", marginBottom: "12px", fontWeight: 600 }}>
-                Solicitudes pendientes ({guestsData.pending.length})
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {guestsData.pending.map((guest: any) => (
-                  <div
-                    key={guest.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      padding: "12px",
-                      backgroundColor: "#09090b",
-                      borderRadius: "10px",
-                      border: "1px solid #27272a",
-                    }}
-                  >
-                    {/* Avatar placeholder */}
-                    <div
-                      style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "50%",
-                        backgroundColor: "#27272a",
+                        width: "36px",
+                        height: "36px",
+                        flexShrink: 0,
+                        borderRadius: "99px",
+                        backgroundColor: `${accion.color}15`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: "14px",
+                        fontSize: "16px",
                       }}
                     >
-                      👤
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: "white", fontSize: "13px", fontWeight: 600, margin: 0 }}>
-                        {guest.userName}
-                      </p>
-                      <p style={{ color: "#52525b", fontSize: "11px", margin: "2px 0 0 0" }}>
-                        Esperando aprobación
-                      </p>
-                    </div>
-                    {/* Botones de aprobar/rechazar */}
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <button
-                        onClick={() => handleApproveGuest(guest.id)}
-                        disabled={processingGuest === guest.id}
+                      {accion.icon}
+                    </span>
+                    <div>
+                      <p
                         style={{
-                          padding: "8px 16px",
-                          borderRadius: "8px",
-                          backgroundColor: "transparent",
-                          border: "1px solid #E0B046",
-                          color: "#E0B046",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          cursor: processingGuest === guest.id ? "not-allowed" : "pointer",
-                          transition: "all 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "rgba(224, 176, 70, 0.1)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
+                          color: "white",
+                          fontSize: "13px",
+                          fontWeight: 700,
+                          margin: "0 0 2px 0",
                         }}
                       >
-                        Aprobar
-                      </button>
-                      <button
-                        onClick={() => handleRejectGuest(guest.id)}
-                        disabled={processingGuest === guest.id}
-                        style={{
-                          padding: "8px 16px",
-                          borderRadius: "8px",
-                          backgroundColor: "transparent",
-                          border: "1px solid #f43f5e",
-                          color: "#f43f5e",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          cursor: processingGuest === guest.id ? "not-allowed" : "pointer",
-                          transition: "all 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "rgba(244, 63, 94, 0.1)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        Rechazar
-                      </button>
+                        {accion.label}
+                      </p>
+                      <p style={{ color: "#52525b", fontSize: "11px", margin: 0 }}>
+                        {accion.desc}
+                      </p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* Mensaje si no hay invitados */}
-          {(!guestsData?.confirmed || guestsData.confirmed.length === 0) && 
-           (!guestsData?.pending || guestsData.pending.length === 0) && (
-            <p style={{ color: "#52525b", fontSize: "13px", textAlign: "center", padding: "20px" }}>
-              Aún no hay invitados confirmados
-            </p>
-          )}
-        </div>
-
-        {/* ── Sección: Galería de fotos (placeholder) ─────────────────────── */}
-        <div
-          style={{
-            backgroundColor: "#18181b",
-            border: "1px solid #3f3f46",
-            borderRadius: "20px",
-            padding: "28px",
-            marginTop: "20px",
-          }}
-        >
-          {/* Encabezado de la sección */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "20px",
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  color: "#71717a",
-                  fontSize: "10px",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.15em",
-                  margin: "0 0 4px 0",
-                }}
-              >
-                Álbum del Evento
-              </p>
-              <p
-                style={{
-                  color: "white",
-                  fontWeight: 900,
-                  fontSize: "16px",
-                  margin: 0,
-                }}
-              >
-                Fotos compartidas
-              </p>
-            </div>
-            {/* Botón para subir fotos */}
-            <button
+            {/* ── Sección: Invitados ─────────────────────── */}
+            <div
               style={{
-                padding: "10px 20px",
-                borderRadius: "10px",
-                backgroundColor: "rgba(245,158,11,0.1)",
-                border: "1px solid rgba(245,158,11,0.3)",
-                color: "#f59e0b",
-                fontSize: "12px",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                cursor: "pointer",
+                backgroundColor: "#18181b",
+                border: "1px solid #3f3f46",
+                borderRadius: "20px",
+                padding: "28px",
+                marginTop: "20px",
+              }}
+            >
+              {/* Encabezado de la sección */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "20px",
+                }}
+              >
+                <div>
+                  <p
+                    style={{
+                      color: "#71717a",
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.15em",
+                      margin: "0 0 4px 0",
+                    }}
+                  >
+                    ✦ INVITADOS
+                  </p>
+                  <h2
+                    style={{
+                      color: "white",
+                      fontSize: "18px",
+                      fontWeight: 900,
+                      margin: 0,
+                    }}
+                  >
+                    {guestsData?.guestCount || evento?.guestCount || 0} Confirmados
+                  </h2>
+                </div>
+                {/* Badge de visibilidad */}
+                <span
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    backgroundColor: evento?.visibility === "private" 
+                      ? "rgba(167, 139, 250, 0.15)" 
+                      : "rgba(16, 185, 129, 0.15)",
+                    color: evento?.visibility === "private" 
+                      ? "#a78bfa" 
+                      : "#10b981",
+                    border: `1px solid ${evento?.visibility === "private" 
+                      ? "rgba(167, 139, 250, 0.3)" 
+                      : "rgba(16, 185, 129, 0.3)"}`,
+                  }}
+                >
+                  {evento?.visibility === "private" ? "🔒 Privado" : "🌐 Público"}
+                </span>
+              </div>
+
+              {/* Lista de invitados confirmados */}
+              {guestsData?.confirmed && guestsData.confirmed.length > 0 && (
+                <div style={{ marginBottom: "20px" }}>
+                  <p style={{ color: "#52525b", fontSize: "11px", marginBottom: "12px", fontWeight: 600 }}>
+                    Lista de confirmados
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {guestsData.confirmed.map((guest: EventGuest) => (
+                      <div
+                        key={guest.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          padding: "12px",
+                          backgroundColor: "#09090b",
+                          borderRadius: "10px",
+                          border: "1px solid #27272a",
+                        }}
+                      >
+                        {/* Avatar placeholder */}
+                        <div
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            backgroundColor: "#27272a",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "14px",
+                          }}
+                        >
+                          👤
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ color: "white", fontSize: "13px", fontWeight: 600, margin: 0 }}>
+                            {guest.userName}
+                          </p>
+                        </div>
+                        <span
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            backgroundColor: "rgba(16, 185, 129, 0.15)",
+                            color: "#10b981",
+                          }}
+                        >
+                          Confirmado
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de invitados pendientes (solo para el creador) */}
+              {guestsData?.isOwner && guestsData?.pending && guestsData.pending.length > 0 && (
+                <div>
+                  <p style={{ color: "#f59e0b", fontSize: "11px", marginBottom: "12px", fontWeight: 600 }}>
+                    Solicitudes pendientes ({guestsData.pending.length})
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {guestsData.pending.map((guest: EventGuest) => (
+                      <div
+                        key={guest.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          padding: "12px",
+                          backgroundColor: "#09090b",
+                          borderRadius: "10px",
+                          border: "1px solid #27272a",
+                        }}
+                      >
+                        {/* Avatar placeholder */}
+                        <div
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            backgroundColor: "#27272a",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "14px",
+                          }}
+                        >
+                          👤
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ color: "white", fontSize: "13px", fontWeight: 600, margin: 0 }}>
+                            {guest.userName}
+                          </p>
+                          <p style={{ color: "#52525b", fontSize: "11px", margin: "2px 0 0 0" }}>
+                            Esperando aprobación
+                          </p>
+                        </div>
+                        {/* Botones de aprobar/rechazar */}
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            onClick={() => handleApproveGuest(guest.id)}
+                            disabled={processingGuest === guest.id}
+                            style={{
+                              padding: "8px 16px",
+                              borderRadius: "8px",
+                              backgroundColor: "transparent",
+                              border: "1px solid #E0B046",
+                              color: "#E0B046",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: processingGuest === guest.id ? "not-allowed" : "pointer",
+                              transition: "all 0.2s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "rgba(224, 176, 70, 0.1)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "transparent";
+                            }}
+                          >
+                            Aprobar
+                          </button>
+                          <button
+                            onClick={() => handleRejectGuest(guest.id)}
+                            disabled={processingGuest === guest.id}
+                            style={{
+                              padding: "8px 16px",
+                              borderRadius: "8px",
+                              backgroundColor: "transparent",
+                              border: "1px solid #f43f5e",
+                              color: "#f43f5e",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: processingGuest === guest.id ? "not-allowed" : "pointer",
+                              transition: "all 0.2s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "rgba(244, 63, 94, 0.1)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "transparent";
+                            }}
+                          >
+                            Rechazar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Mensaje si no hay invitados */}
+              {(!guestsData?.confirmed || guestsData.confirmed.length === 0) && 
+               (!guestsData?.pending || guestsData.pending.length === 0) && (
+                <p style={{ color: "#52525b", fontSize: "13px", textAlign: "center", padding: "20px" }}>
+                  Aún no hay invitados confirmados
+                </p>
+              )}
+            </div>
+
+            {/* ── Sección: Galería de fotos (placeholder) ─────────────────────── */}
+            <div
+              style={{
+                backgroundColor: "#18181b",
+                border: "1px solid #3f3f46",
+                borderRadius: "20px",
+                padding: "28px",
+                marginTop: "20px",
+              }}
+            >
+              {/* Encabezado de la sección */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "20px",
+                }}
+              >
+                <div>
+                  <p
+                    style={{
+                      color: "#71717a",
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.15em",
+                      margin: "0 0 4px 0",
+                    }}
+                  >
+                    Álbum del Evento
+                  </p>
+                  <p
+                    style={{
+                      color: "white",
+                      fontWeight: 900,
+                      fontSize: "16px",
+                      margin: 0,
+                    }}
+                  >
+                    Fotos compartidas
+                  </p>
+                </div>
+                {/* Botón para subir fotos */}
+                <button
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "10px",
+                    backgroundColor: "rgba(245,158,11,0.1)",
+                    border: "1px solid rgba(245,158,11,0.3)",
+                    color: "#f59e0b",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "7px",
+                  }}
+                >
+                  + Subir fotos
+                </button>
+              </div>
+
+              {/* Estado vacío de la galería */}
+              <div
+                style={{
+                  border: "2px dashed #27272a",
+                  borderRadius: "14px",
+                  padding: "60px 24px",
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "14px",
+                }}
+              >
+                <span style={{ fontSize: "48px" }}>🖼</span>
+                <p
+                  style={{
+                    color: "white",
+                    fontWeight: 900,
+                    fontSize: "15px",
+                    margin: 0,
+                  }}
+                >
+                  Aún no hay fotos en este álbum
+                </p>
+                <p
+                  style={{
+                    color: "#52525b",
+                    fontSize: "13px",
+                    margin: 0,
+                    maxWidth: "320px",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Las fotos que tus invitados suban con el código{" "}
+                  <strong style={{ color: "#f59e0b", fontFamily: "monospace" }}>
+                    {evento.accessCode}
+                  </strong>{" "}
+                  aparecerán aquí.
+                </p>
+              </div>
+            </div>
+
+            {/* ── Sección: Comentarios ─────────────────────────────────────────────── */}
+            <div
+              style={{
+                backgroundColor: "#18181b",
+                border: "1px solid #3f3f46",
+                borderRadius: "20px",
+                padding: "28px",
+                marginTop: "20px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "20px",
+                }}
+              >
+                <div>
+                  <p
+                    style={{
+                      color: "#71717a",
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.15em",
+                      margin: "0 0 4px 0",
+                    }}
+                  >
+                    Comentarios
+                  </p>
+                  <p
+                    style={{
+                      color: "white",
+                      fontWeight: 900,
+                      fontSize: "16px",
+                      margin: 0,
+                    }}
+                  >
+                    Opiniones de los invitados
+                  </p>
+                </div>
+                <span
+                  style={{
+                    backgroundColor: "rgba(224,176,70,0.15)",
+                    color: "#E0B046",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {comentarios.length} {comentarios.length === 1 ? "comentario" : "comentarios"}
+                </span>
+              </div>
+
+              <CommentForm eventId={id as string} onCommentAdded={handleCommentAdded} />
+
+              <div style={{ marginTop: "24px" }}>
+                <CommentList 
+                  comments={comentarios} 
+                  onEdit={handleCommentEdit}
+                  onDelete={handleCommentDelete}
+                />
+              </div>
+            </div>
+
+            {/* ── Footer de la tarjeta: metadatos del sistema ──────────────────── */}
+            <div
+              style={{
+                marginTop: "20px",
+                padding: "16px 24px",
+                borderRadius: "14px",
+                backgroundColor: "#09090b",
+                border: "1px solid #18181b",
                 display: "flex",
                 alignItems: "center",
-                gap: "7px",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "10px",
               }}
             >
-              + Subir fotos
-            </button>
-          </div>
-
-          {/* Estado vacío de la galería */}
-          <div
-            style={{
-              border: "2px dashed #27272a",
-              borderRadius: "14px",
-              padding: "60px 24px",
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "14px",
-            }}
-          >
-            <span style={{ fontSize: "48px" }}>🖼</span>
-            <p
-              style={{
-                color: "white",
-                fontWeight: 900,
-                fontSize: "15px",
-                margin: 0,
-              }}
-            >
-              Aún no hay fotos en este álbum
-            </p>
-            <p
-              style={{
-                color: "#52525b",
-                fontSize: "13px",
-                margin: 0,
-                maxWidth: "320px",
-                lineHeight: 1.6,
-              }}
-            >
-              Las fotos que tus invitados suban con el código{" "}
-              <strong style={{ color: "#f59e0b", fontFamily: "monospace" }}>
-                {evento.accessCode}
-              </strong>{" "}
-              aparecerán aquí.
-            </p>
-          </div>
-        </div>
-
-        {/* ── Sección: Comentarios ─────────────────────────────────────────────── */}
-        <div
-          style={{
-            backgroundColor: "#18181b",
-            border: "1px solid #3f3f46",
-            borderRadius: "20px",
-            padding: "28px",
-            marginTop: "20px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "20px",
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  color: "#71717a",
-                  fontSize: "10px",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.15em",
-                  margin: "0 0 4px 0",
-                }}
-              >
-                Comentarios
+              <p style={{ color: "#3f3f46", fontSize: "11px", margin: 0 }}>
+                ID del evento:{" "}
+                <span style={{ fontFamily: "monospace", color: "#52525b" }}>
+                  {evento.id}
+                </span>
               </p>
-              <p
-                style={{
-                  color: "white",
-                  fontWeight: 900,
-                  fontSize: "16px",
-                  margin: 0,
-                }}
-              >
-                Opiniones de los invitados
+              <p style={{ color: "#3f3f46", fontSize: "11px", margin: 0 }}>
+                AFTER-REWIND © 2026 — Captura la esencia
               </p>
             </div>
-            <span
-              style={{
-                backgroundColor: "rgba(224,176,70,0.15)",
-                color: "#E0B046",
-                fontSize: "11px",
-                fontWeight: 800,
-                padding: "6px 12px",
-                borderRadius: "8px",
-              }}
-            >
-              {comentarios.length} {comentarios.length === 1 ? "comentario" : "comentarios"}
-            </span>
-          </div>
-
-          <CommentForm eventId={id as string} onCommentAdded={handleCommentAdded} />
-
-          <div style={{ marginTop: "24px" }}>
-            <CommentList 
-              comments={comentarios} 
-              onEdit={handleCommentEdit}
-              onDelete={handleCommentDelete}
-            />
-          </div>
-        </div>
-
-        {/* ── Footer de la tarjeta: metadatos del sistema ──────────────────── */}
-        <div
-          style={{
-            marginTop: "20px",
-            padding: "16px 24px",
-            borderRadius: "14px",
-            backgroundColor: "#09090b",
-            border: "1px solid #18181b",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "10px",
-          }}
-        >
-          <p style={{ color: "#3f3f46", fontSize: "11px", margin: 0 }}>
-            ID del evento:{" "}
-            <span style={{ fontFamily: "monospace", color: "#52525b" }}>
-              {evento.id}
-            </span>
-          </p>
-<p style={{ color: "#3f3f46", fontSize: "11px", margin: 0 }}>
-            AFTER-REWIND © 2026 — Captura la esencia
-          </p>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Modal de confirmación de eliminación del evento */}

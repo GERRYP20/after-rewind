@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: uploadResponse.secure_url });
 
   } catch (error: unknown) {
-    // Manejo de errores sin 'any' usando unknown + instanceof
+    // Manejo de errores usando unknown + instanceof
     const errorMessage = error instanceof Error ? error.message : "Error desconocido";
     console.error("Error uploading file:", errorMessage);
     return NextResponse.json(
