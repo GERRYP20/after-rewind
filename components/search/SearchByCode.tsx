@@ -26,6 +26,7 @@ export default function SearchByCode() {
    * Convierte automáticamente a mayúsculas y elimina espacios.
    */
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // Permitimos guiones pero eliminamos espacios
     setCode(e.target.value.toUpperCase().replace(/\s/g, ""));
     setError(""); // Limpia el error cuando el usuario comienza a escribir
   };
@@ -47,8 +48,9 @@ export default function SearchByCode() {
     setError("");
 
     try {
-      // Realiza la búsqueda a través de la API
-      const res = await fetch(`/api/invitations/by-code?code=${encodeURIComponent(code)}`);
+      // Normalizamos el código para la búsqueda (quitamos guiones extras si los hay)
+      // Aunque en la DB se guardarán con guión, la API se encargará de buscarlo exactamente
+      const res = await fetch(`/api/invitations/by-code?code=${encodeURIComponent(code.trim())}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -108,7 +110,7 @@ export default function SearchByCode() {
           type="text"
           value={code}
           onChange={handleChange}
-          placeholder="Código (ej: ABC123)"
+          placeholder="Código (ej: XXXXX-XXXXX)"
           disabled={loading}
           maxLength={20}
           style={{

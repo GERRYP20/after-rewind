@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { generateAccessCode } from "@/lib/utils";
 
 // ─── Categorías disponibles para el evento ──────
 const CATEGORIAS = [
@@ -33,10 +34,19 @@ export default function NuevaInvitacion() {
     title: "",
     date: "",
     location: "",
-    accessCode: "",
+    accessCode: "", // Se generará automáticamente en el primer render
     description: "",
     imageUrl: "", 
   });
+
+  // Generar código automático al cargar
+  React.useEffect(() => {
+    setFormData(prev => ({ ...prev, accessCode: generateAccessCode() }));
+  }, []);
+
+  const regenerateCode = () => {
+    setFormData(prev => ({ ...prev, accessCode: generateAccessCode() }));
+  };
 
   // ── Maneja la subida de la imagen principal a Cloudinary ─────────
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -356,25 +366,46 @@ export default function NuevaInvitacion() {
 
                 <div>
                   <label style={labelStyle}>Código de acceso</label>
-                  <div style={{ position: "relative" }}>
-                    <span style={{
-                      position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)",
-                      color: "#E0B046", fontWeight: 900, fontSize: "16px", pointerEvents: "none",
-                    }}>
-                      #
-                    </span>
-                    <input
-                      style={{ ...inputStyle, paddingLeft: "34px", textTransform: "uppercase", fontFamily: "monospace", letterSpacing: "0.1em" }}
-                      placeholder="ANA2026"
-                      value={formData.accessCode}
-                      onChange={e => setFormData({ ...formData, accessCode: e.target.value.toUpperCase() })}
-                      onFocus={e => (e.target.style.borderColor = "#E0B046")}
-                      onBlur={e => (e.target.style.borderColor = "#3f3f46")}
-                      required
-                    />
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <div style={{ position: "relative", flex: 1 }}>
+                      <span style={{
+                        position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)",
+                        color: "#E0B046", fontWeight: 900, fontSize: "16px", pointerEvents: "none",
+                      }}>
+                        #
+                      </span>
+                      <input
+                        style={{ ...inputStyle, paddingLeft: "34px", textTransform: "uppercase", fontFamily: "monospace", letterSpacing: "0.1em" }}
+                        placeholder="XXXX-XXXX"
+                        value={formData.accessCode}
+                        onChange={e => setFormData({ ...formData, accessCode: e.target.value.toUpperCase() })}
+                        onFocus={e => (e.target.style.borderColor = "#E0B046")}
+                        onBlur={e => (e.target.style.borderColor = "#3f3f46")}
+                        required
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={regenerateCode}
+                      style={{
+                        padding: "0 16px",
+                        backgroundColor: "#18181b",
+                        border: "1px solid #3f3f46",
+                        borderRadius: "10px",
+                        color: "#E0B046",
+                        fontSize: "18px",
+                        cursor: "pointer",
+                        transition: "all 0.2s"
+                      }}
+                      title="Generar nuevo código"
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#E0B046"; e.currentTarget.style.backgroundColor = "rgba(224, 176, 70, 0.1)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#3f3f46"; e.currentTarget.style.backgroundColor = "#18181b"; }}
+                    >
+                      🔄
+                    </button>
                   </div>
                   <p style={{ color: "#52525b", fontSize: "11px", marginTop: "6px" }}>
-                    Tus invitados usarán este código para acceder al evento.
+                    Código generado automáticamente para mayor seguridad. Puedes cambiarlo si lo deseas.
                   </p>
                 </div>
               </div>

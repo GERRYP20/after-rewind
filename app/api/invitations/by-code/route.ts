@@ -33,15 +33,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Obtiene el código de los parámetros de búsqueda
     const { searchParams } = new URL(request.url);
-    const code = searchParams.get("code");
+    let code = searchParams.get("code")?.trim().toUpperCase() || "";
 
     // Validación: el código es requerido
-    if (!code || code.trim().length === 0) {
+    if (!code) {
       return NextResponse.json({ error: "El código es requerido" }, { status: 400 });
     }
 
+    // Inteligencia de búsqueda: si el usuario ingresó 10 caracteres sin guión,
+    // lo convertimos al formato XXXXX-XXXXX para que coincida con lo guardado en DB
+    if (code.length === 10 && !code.includes("-")) {
+      code = `${code.substring(0, 5)}-${code.substring(5)}`;
+    }
+
     // Busca el evento en la base de datos usando el repositorio
-    const invitation = await InvitationRepository.getByCode(code.trim().toUpperCase());
+    const invitation = await InvitationRepository.getByCode(code);
 
     // Si no se encuentra el evento, retorna 404
     if (!invitation) {
