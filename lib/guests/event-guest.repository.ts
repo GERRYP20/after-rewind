@@ -158,11 +158,40 @@ export const EventGuestRepository = {
   },
 
   /**
-   * Elimina un invitado y decrementa el guestCount
+   * Elimina un invitado y decrementa el guestCount si estaba confirmado
    * Usa transacción para mantener consistencia
    * @param guestId - ID del documento del invitado
    * @param eventId - ID del evento
    */
+  async removeGuest(guestId: string, eventId: string): Promise<void> {
+    await db.runTransaction(async (transaction) => {
+      // 1. Verificar que el invitado existe
+      const guestRef = db.collection(COLLECTION_NAME).doc(guestId);
+      const guestDoc = await guestRef.get();
+      
+      if (!guestDoc.exists) {
+        throw new Error("El invitado no existe");
+      }
+
+      const guestData = guestDoc.data();
+      const wasConfirmed = guestData?.status === "confirmed";
+
+      // 2. Eliminar el documento del invitado
+      transaction.delete(guestRef);
+
+      // 3. Si estaba confirmado, decrementar el guestCount
+      if (wasConfirmed) {
+        const eventRef = db.collection("invitations").doc(eventId);
+        const eventDoc = await eventRef.get();
+        
+        if (eventDoc.exists) {
+          const currentCount = eventDoc.data()?.guestCount || 0;
+          transaction.update(eventRef, { guestCount: Math.max(0, currentCount - 1) });
+        }
+      }
+    });
+  },
+
   /**
    * Obtiene todos los eventos a los que un usuario se ha unido y ha sido confirmado
    * @param userId - ID del usuario en Firebase Auth

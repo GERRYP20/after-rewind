@@ -142,6 +142,34 @@ export default function DetalleEvento() {
     }
   };
 
+  // Función para salir del evento (voluntariamente)
+  const handleLeaveEvent = async () => {
+    if (!confirm("¿Estás seguro de que quieres salir de este evento? Ya no podrás ver las fotos ni los comentarios.")) return;
+    
+    setIsJoining(true); // Reusamos este estado para bloquear la UI
+    try {
+      const res = await fetch(`/api/invitations/${id}/guests`, {
+        method: "DELETE"
+      });
+      
+      if (res.ok) {
+        // Recargar datos de invitados para actualizar el estado UI a "none"
+        const guestsRes = await fetch(`/api/invitations/${id}/guests`);
+        const guestsData = await guestsRes.json();
+        if (!guestsData.error) setGuestsData(guestsData);
+        alert("Has salido del evento.");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Error al salir del evento");
+      }
+    } catch (error) {
+      console.error("Error leaving event:", error);
+      alert("Error al intentar salir del evento");
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
   // Copia el código de acceso al portapapeles
   const copiarCodigo = () => {
     if (!evento) return;
@@ -613,16 +641,34 @@ export default function DetalleEvento() {
             )}
 
             {currentUserGuestStatus === "pending" && (
-              <div style={{
-                padding: "12px 24px",
-                borderRadius: "10px",
-                backgroundColor: "rgba(224, 176, 70, 0.1)",
-                border: "1px solid rgba(224, 176, 70, 0.3)",
-                color: "#E0B046",
-                fontSize: "13px",
-                fontWeight: 700
-              }}>
-                Estado: Pendiente de aprobación
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", maxWidth: "300px" }}>
+                <div style={{
+                  padding: "12px 24px",
+                  borderRadius: "10px",
+                  backgroundColor: "rgba(224, 176, 70, 0.1)",
+                  border: "1px solid rgba(224, 176, 70, 0.3)",
+                  color: "#E0B046",
+                  fontSize: "13px",
+                  fontWeight: 700
+                }}>
+                  Estado: Pendiente de aprobación
+                </div>
+                <button
+                  onClick={handleLeaveEvent}
+                  disabled={isJoining}
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "#f43f5e",
+                    border: "1px solid rgba(244, 63, 94, 0.3)",
+                    padding: "10px",
+                    borderRadius: "10px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancelar solicitud
+                </button>
               </div>
             )}
           </div>
@@ -818,9 +864,18 @@ export default function DetalleEvento() {
                     desc: "Envía el enlace a tus invitados",
                     color: "#38bdf8",
                   },
-                  // Solo mostrar botones de editar y eliminar si el usuario es el creador
-                  ...(isOwner ? [
+                  // Opción para salir del evento si eres un invitado confirmado
+                  ...(currentUserGuestStatus === "confirmed" ? [
                     {
+                      icon: "🚪",
+                      label: "Salir del evento",
+                      desc: "Ya no tendrás acceso a este álbum",
+                      color: "#f43f5e",
+                      action: handleLeaveEvent,
+                    }
+                  ] : []),
+                  // Solo mostrar botones de editar y eliminar si el usuario es el creador
+                  ...(isOwner ? [                    {
                       icon: "✏️",
                       label: "Editar evento",
                       desc: "Modifica los detalles",
