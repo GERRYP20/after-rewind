@@ -361,8 +361,8 @@ export default function DetalleEvento() {
     );
   }, [evento]);
 
-  // Detecta la categoría del evento desde el título
-  const categoryKey = evento?.title?.split(" ")[0]?.toLowerCase() ?? "default";
+  // Detecta la categoría del evento desde el campo guardado
+  const categoryKey = evento?.category?.toLowerCase() ?? "default";
   const coverGradient = COVER_STYLES[categoryKey] ?? COVER_STYLES.default;
 
   // Estadísticas reales

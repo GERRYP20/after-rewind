@@ -35,8 +35,8 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
   // Selecciona el estilo de portada según el índice
   const coverStyle = COVER_STYLES[index % COVER_STYLES.length];
 
-  // Detecta la categoría a partir de la primera palabra del título
-  const categoryKey = evento.title?.split(" ")[0]?.toLowerCase() ?? "default";
+  // Detecta la categoría a partir del campo guardado en el evento
+  const categoryKey = evento.category?.toLowerCase() ?? "default";
   const cat = CATEGORY_META[categoryKey] ?? CATEGORY_META.default;
 
   // Partes de la fecha formateadas por separado

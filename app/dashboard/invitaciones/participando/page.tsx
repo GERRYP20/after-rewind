@@ -23,7 +23,7 @@ const COVER_STYLES = [
 ];
 
 function EventCard({ evento, index }: { evento: Invitation; index: number }) {
-  const categoryKey = evento.title?.split(" ")[0]?.toLowerCase() ?? "default";
+  const categoryKey = evento.category?.toLowerCase() ?? "default";
   const cat = CATEGORY_META[categoryKey] ?? CATEGORY_META.default;
   const coverStyle = COVER_STYLES[index % COVER_STYLES.length];
 
