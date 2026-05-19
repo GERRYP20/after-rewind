@@ -10,7 +10,9 @@ import { EventGuest } from "@/lib/guests/event-guest.types";
 import CommentForm from "@/components/comments/CommentForm";
 import CommentList from "@/components/comments/CommentList";
 import EventEditForm from "@/components/invitations/EventEditForm";
-
+import PhotoUpload from "@/components/photos/PhotoUpload";
+import PhotoGallery from "@/components/photos/PhotoGallery";
+import { EventPhoto } from "@/lib/photos/event-photo.types";
 
 // ─── Colores de portada por categoría (primera palabra del título) ────────────
 const COVER_STYLES: Record<string, string> = {
@@ -49,6 +51,7 @@ export default function DetalleEvento() {
   const [loading, setLoading] = useState(true);
   const [copiado, setCopiado] = useState(false);
   const [comentarios, setComentarios] = useState<Comment[]>([]);
+  const [fotos, setFotos] = useState<EventPhoto[]>([]);
   
   // Estados para edición y eliminación del evento
   const [isEditing, setIsEditing] = useState(false);
@@ -79,6 +82,17 @@ export default function DetalleEvento() {
     return "none";
   }, [guestsData, user, isOwner]);
 
+  // Función para cargar las fotos del álbum
+  const cargarFotos = async () => {
+    try {
+      const res = await fetch(`/api/invitations/${id}/photos`);
+      const data = await res.json();
+      if (!data.error) setFotos(data);
+    } catch (error) {
+      console.error("Error al cargar fotos:", error);
+    }
+  };
+
   // Carga los datos del evento desde la API
   useEffect(() => {
     fetch(`/api/invitations/${id}`)
@@ -89,9 +103,9 @@ export default function DetalleEvento() {
       });
   }, [id]);
 
-  // Carga los comentarios del evento
+  // Carga los comentarios e invitados del evento
   useEffect(() => {
-    // Solo cargar comentarios si el usuario es dueño o está confirmado
+    // Solo cargar si el usuario es dueño o está confirmado
     if (currentUserGuestStatus !== "owner" && currentUserGuestStatus !== "confirmed") return;
 
     fetch(`/api/invitations/${id}/comments`)
@@ -99,6 +113,8 @@ export default function DetalleEvento() {
       .then((data) => {
         if (!data.error) setComentarios(data);
       });
+
+    cargarFotos();
   }, [id, currentUserGuestStatus]);
 
   // Carga los invitados del evento
@@ -348,6 +364,13 @@ export default function DetalleEvento() {
   // Detecta la categoría del evento desde el título
   const categoryKey = evento?.title?.split(" ")[0]?.toLowerCase() ?? "default";
   const coverGradient = COVER_STYLES[categoryKey] ?? COVER_STYLES.default;
+
+  // Estadísticas reales
+  const statsReales = [
+    { label: "Invitados", value: String(guestsData?.guestCount || evento?.guestCount || 0), icon: "👥" },
+    { label: "Fotos", value: String(fotos.length), icon: "🖼" },
+    { label: "Días para el evento", value: String(diasRestantes), icon: "📅" },
+  ];
 
   // Pantalla de carga
   if (loading)
@@ -709,7 +732,7 @@ export default function DetalleEvento() {
                 zIndex: 10,
               }}
             >
-              {STATS.map((stat, i) => (
+              {statsReales.map((stat, i) => (
                 <div
                   key={i}
                   style={{
@@ -1210,7 +1233,7 @@ export default function DetalleEvento() {
               )}
             </div>
 
-            {/* ── Sección: Galería de fotos (placeholder) ─────────────────────── */}
+            {/* ── Sección: Álbum de Fotos ─────────────────────── */}
             <div
               style={{
                 backgroundColor: "#18181b",
@@ -1220,7 +1243,6 @@ export default function DetalleEvento() {
                 marginTop: "20px",
               }}
             >
-              {/* Encabezado de la sección */}
               <div
                 style={{
                   display: "flex",
@@ -1253,67 +1275,30 @@ export default function DetalleEvento() {
                     Fotos compartidas
                   </p>
                 </div>
-                {/* Botón para subir fotos */}
-                <button
+                <span
                   style={{
-                    padding: "10px 20px",
-                    borderRadius: "10px",
-                    backgroundColor: "rgba(245,158,11,0.1)",
-                    border: "1px solid rgba(245,158,11,0.3)",
-                    color: "#f59e0b",
-                    fontSize: "12px",
+                    backgroundColor: "rgba(56, 189, 248, 0.15)",
+                    color: "#38bdf8",
+                    fontSize: "11px",
                     fontWeight: 800,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "7px",
+                    padding: "6px 12px",
+                    borderRadius: "8px",
                   }}
                 >
-                  + Subir fotos
-                </button>
+                  {fotos.length} {fotos.length === 1 ? "foto" : "fotos"}
+                </span>
               </div>
 
-              {/* Estado vacío de la galería */}
-              <div
-                style={{
-                  border: "2px dashed #27272a",
-                  borderRadius: "14px",
-                  padding: "60px 24px",
-                  textAlign: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "14px",
-                }}
-              >
-                <span style={{ fontSize: "48px" }}>🖼</span>
-                <p
-                  style={{
-                    color: "white",
-                    fontWeight: 900,
-                    fontSize: "15px",
-                    margin: 0,
-                  }}
-                >
-                  Aún no hay fotos en este álbum
-                </p>
-                <p
-                  style={{
-                    color: "#52525b",
-                    fontSize: "13px",
-                    margin: 0,
-                    maxWidth: "320px",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  Las fotos que tus invitados suban con el código{" "}
-                  <strong style={{ color: "#f59e0b", fontFamily: "monospace" }}>
-                    {evento.accessCode}
-                  </strong>{" "}
-                  aparecerán aquí.
-                </p>
+              {/* Componente para subir fotos (se pasa la función para recargar) */}
+              <PhotoUpload eventId={id as string} onUploadSuccess={cargarFotos} />
+
+              <div style={{ marginTop: "24px" }}>
+                <PhotoGallery 
+                  photos={fotos} 
+                  currentUserId={user?.uid}
+                  isEventOwner={isOwner || false}
+                  onDeleteSuccess={cargarFotos}
+                />
               </div>
             </div>
 

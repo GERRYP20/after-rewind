@@ -1,12 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Invitation } from "@/lib/invitations/invitation.types";
 import SearchByCode from "@/components/search/SearchByCode";
 
 // ─── Colores de portada definidos como estilos inline (no clases dinámicas) ──
-// Tailwind no puede generar clases construidas con variables en runtime,
-// por eso usamos style={{ background: "..." }} directamente.
 const COVER_STYLES = [
   { background: "linear-gradient(135deg, #92400e, #b45309, #d97706)" }, // ámbar
   { background: "linear-gradient(135deg, #881337, #be123c, #e11d48)" }, // rosa
@@ -32,10 +31,6 @@ type Filter = "todos" | "próximos" | "pasados";
 // =============================================================================
 // COMPONENTE: Card de evento individual
 // =============================================================================
-import Image from "next/image";
-
-// ... (existing constants)
-
 function EventCard({ evento, index }: { evento: Invitation; index: number }) {
   // Selecciona el estilo de portada según el índice
   const coverStyle = COVER_STYLES[index % COVER_STYLES.length];
@@ -54,25 +49,22 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
 
   return (
     <Link href={`/dashboard/invitaciones/${evento.id}`} className="group block">
-      {/* Tarjeta completa — fondo zinc-900 para que contraste con el negro de la página */}
       <div
         style={{
           borderRadius: "1rem",
           overflow: "hidden",
-          backgroundColor: "#18181b" /* zinc-900 */,
-          border: "1px solid #3f3f46" /* zinc-700 */,
+          backgroundColor: "#18181b",
+          border: "1px solid #3f3f46",
           transition: "all 0.3s ease",
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
-          // Efecto hover: eleva la card y resalta el borde
           const el = e.currentTarget as HTMLDivElement;
           el.style.transform = "translateY(-8px)";
           el.style.borderColor = "rgba(245,158,11,0.6)";
           el.style.boxShadow = "0 20px 40px rgba(245,158,11,0.12)";
         }}
         onMouseLeave={(e) => {
-          // Restaura el estado inicial al quitar el cursor
           const el = e.currentTarget as HTMLDivElement;
           el.style.transform = "translateY(0)";
           el.style.borderColor = "#3f3f46";
@@ -102,7 +94,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
           <div style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.4) 100%)",
+            background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 40%, rgba(0,0,0,0.5) 100%)",
             zIndex: 1
           }} />
 
@@ -156,13 +148,11 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
         <div
           style={{
             padding: "20px",
-            backgroundColor: "#18181b" /* mismo zinc-900 que el contenedor */,
             display: "flex",
             flexDirection: "column",
             gap: "14px",
           }}
         >
-          {/* Nombre del evento */}
           <h3
             style={{
               color: "white",
@@ -179,10 +169,9 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
             {evento.title}
           </h3>
 
-          {/* Ubicación */}
           <p
             style={{
-              color: "#a1a1aa" /* zinc-400 */,
+              color: "#a1a1aa",
               fontSize: "13px",
               margin: 0,
               display: "flex",
@@ -197,10 +186,8 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
             {evento.location}
           </p>
 
-          {/* Separador */}
           <div style={{ borderTop: "1px solid #3f3f46" }} />
 
-          {/* Fila inferior: código de acceso + contador de fotos */}
           <div
             style={{
               display: "flex",
@@ -208,19 +195,17 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
               justifyContent: "space-between",
             }}
           >
-            {/* Chip del código de acceso */}
             <div
               style={{
-                backgroundColor: "#27272a" /* zinc-800 */,
+                backgroundColor: "#27272a",
                 border: "1px solid #3f3f46",
                 borderRadius: "10px",
                 padding: "8px 14px",
               }}
             >
-              {/* Etiqueta pequeña */}
               <p
                 style={{
-                  color: "#71717a" /* zinc-500 */,
+                  color: "#71717a",
                   fontSize: "9px",
                   fontWeight: 900,
                   textTransform: "uppercase",
@@ -230,10 +215,9 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
               >
                 Código
               </p>
-              {/* El código en monoespaciado y ámbar */}
               <p
                 style={{
-                  color: "#E0B046 " /* amber-400 */,
+                  color: "#E0B046 ",
                   fontSize: "14px",
                   fontFamily: "monospace",
                   fontWeight: 700,
@@ -246,7 +230,6 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
               </p>
             </div>
 
-            {/* Contador de fotos */}
             <span
               style={{
                 color: "#52525b",
@@ -281,7 +264,7 @@ function CreateEventCard() {
           minHeight: "320px",
           height: "100%",
           border:
-            "2px dashed rgba(245,158,11,0.5)" /* punteado ámbar — muy visible */,
+            "2px dashed rgba(245,158,11,0.5)",
           backgroundColor: "rgba(245,158,11,0.04)",
           display: "flex",
           flexDirection: "column",
@@ -293,7 +276,6 @@ function CreateEventCard() {
           transition: "all 0.3s ease",
         }}
         onMouseEnter={(e) => {
-          // Intensifica el borde y el fondo al hacer hover
           const el = e.currentTarget as HTMLDivElement;
           el.style.borderColor = "rgba(245,158,11,0.9)";
           el.style.backgroundColor = "rgba(245,158,11,0.09)";
@@ -301,7 +283,6 @@ function CreateEventCard() {
           el.style.boxShadow = "0 20px 40px rgba(245,158,11,0.15)";
         }}
         onMouseLeave={(e) => {
-          // Restaura el estado base
           const el = e.currentTarget as HTMLDivElement;
           el.style.borderColor = "rgba(245,158,11,0.5)";
           el.style.backgroundColor = "rgba(245,158,11,0.04)";
@@ -309,7 +290,6 @@ function CreateEventCard() {
           el.style.boxShadow = "none";
         }}
       >
-        {/* Círculo con el "+" */}
         <div
           style={{
             width: "64px",
@@ -330,7 +310,6 @@ function CreateEventCard() {
           +
         </div>
 
-        {/* Textos */}
         <div style={{ textAlign: "center" }}>
           <p
             style={{
@@ -360,7 +339,6 @@ export default function Dashboard() {
   const [filter, setFilter] = useState<Filter>("todos");
   const [sort, setSort] = useState("reciente");
 
-  // Carga los eventos desde la API al montar el componente
   useEffect(() => {
     fetch("/api/invitations")
       .then((res) => (res.ok ? res.json() : []))
@@ -373,7 +351,6 @@ export default function Dashboard() {
 
   const now = new Date();
 
-  // Aplica el filtro de tiempo sobre la lista de eventos
   const filtered = eventos.filter((e) => {
     const d = new Date(e.date);
     if (filter === "próximos") return d >= now;
@@ -381,7 +358,6 @@ export default function Dashboard() {
     return true;
   });
 
-  // Ordena los eventos filtrados según el criterio elegido
   const sorted = [...filtered].sort((a, b) => {
     if (sort === "reciente")
       return new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -390,7 +366,6 @@ export default function Dashboard() {
     return a.title.localeCompare(b.title);
   });
 
-  // Pantalla de carga mientras llega la respuesta de la API
   if (loading)
     return (
       <div
@@ -428,7 +403,6 @@ export default function Dashboard() {
       </div>
     );
 
-  // Definición de los filtros del tab bar
   const FILTERS: { key: Filter; label: string; icon: string }[] = [
     { key: "todos", label: "Todos", icon: "⊞" },
     { key: "próximos", label: "Próximos", icon: "⏳" },
@@ -447,7 +421,6 @@ export default function Dashboard() {
         minHeight: "100vh",
       }}
     >
-      {/* ── ENCABEZADO ─────────────────────────────────────────────────── */}
       <header style={{ marginBottom: "3rem" }}>
         <h1
           style={{
@@ -460,25 +433,22 @@ export default function Dashboard() {
         >
           Mis Eventos <span style={{ color: "#E0B046" }}>Creados</span>
         </h1>
-<p
-            style={{
-              color: "#71717a",
-              fontSize: "14px",
-              margin: 0,
-              maxWidth: "480px",
-            }}
-          >
-            Gestiona tus eventos, revisa estadísticas y administra álbumes
-            compartidos.
-          </p>
+        <p
+          style={{
+            color: "#71717a",
+            fontSize: "14px",
+            margin: 0,
+            maxWidth: "480px",
+          }}
+        >
+          Gestiona tus eventos, revisa estadísticas y administra álbumes compartidos.
+        </p>
       </header>
 
-      {/* ── SECCIÓN: BUSCAR EVENTO POR CÓDIGO ─────────────────────────────── */}
       <div style={{ marginBottom: "3rem" }}>
         <SearchByCode />
       </div>
 
-      {/* ── BARRA DE CONTROLES ─────────────────────────────────────────── */}
       <div
         style={{
           display: "flex",
@@ -489,7 +459,6 @@ export default function Dashboard() {
           marginBottom: "2.5rem",
         }}
       >
-        {/* Pills de filtro */}
         <div
           style={{
             display: "flex",
@@ -515,13 +484,9 @@ export default function Dashboard() {
                 alignItems: "center",
                 gap: "8px",
                 transition: "all 0.2s ease",
-                // Activo: fondo ámbar + texto negro; Inactivo: transparente + texto gris
                 backgroundColor: filter === f.key ? "#E0B046 " : "transparent",
                 color: filter === f.key ? "#000" : "#71717a",
-                boxShadow:
-                  filter === f.key
-                    ? "0 4px 12px rgba(224, 176, 70, 0.35)"
-                    : "none",
+                boxShadow: filter === f.key ? "0 4px 12px rgba(224, 176, 70, 0.35)" : "none",
               }}
             >
               <span>{f.icon}</span>
@@ -530,11 +495,8 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Selector de ordenamiento */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ color: "#71717a", fontSize: "13px" }}>
-            Ordenar por:
-          </span>
+          <span style={{ color: "#71717a", fontSize: "13px" }}>Ordenar por:</span>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
@@ -556,68 +518,28 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── GRID DE CARDS ──────────────────────────────────────────────── */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fill, minmax(260px, 1fr))" /* columnas responsivas */,
-          gap: "28px" /* espacio generoso entre cards */,
+          gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+          gap: "28px",
           alignItems: "start",
         }}
       >
-        {/* Card de creación — siempre primera */}
         <CreateEventCard />
-
-        {/* Mensaje vacío cuando no hay resultados */}
         {sorted.length === 0 ? (
-          <div
-            style={{
-              gridColumn: "span 3",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "80px 0",
-            }}
-          >
-            <p
-              style={{
-                color: "#3f3f46",
-                fontSize: "12px",
-                textTransform: "uppercase",
-                letterSpacing: "0.2em",
-                fontWeight: 700,
-              }}
-            >
-              Sin eventos para este filtro
-            </p>
+          <div style={{ gridColumn: "span 3", display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 0" }}>
+            <p style={{ color: "#3f3f46", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.2em", fontWeight: 700 }}>Sin eventos para este filtro</p>
           </div>
         ) : (
-          // Renderiza una card por cada evento
           sorted.map((evento, i) => (
             <EventCard key={evento.id} evento={evento} index={i} />
           ))
         )}
       </div>
 
-      {/* ── PIE DE PÁGINA ──────────────────────────────────────────────── */}
-      <footer
-        style={{
-          marginTop: "6rem",
-          paddingTop: "2rem",
-          textAlign: "center",
-          borderTop: "1px solid #27272a",
-        }}
-      >
-        <p
-          style={{
-            color: "#3f3f46",
-            fontSize: "11px",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.2em",
-          }}
-        >
+      <footer style={{ marginTop: "6rem", paddingTop: "2rem", textAlign: "center", borderTop: "1px solid #27272a" }}>
+        <p style={{ color: "#3f3f46", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em" }}>
           AFTER-REWIND © 2026 — Captura la esencia
         </p>
       </footer>
