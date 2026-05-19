@@ -555,17 +555,39 @@ export default function DetalleEvento() {
 
           {/* Metadatos rápidos: ubicación y fecha */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-            <span
-              style={{
-                color: "rgba(255,255,255,0.85)",
-                fontSize: "15px",
-                display: "flex",
-                alignItems: "center",
-                gap: "7px",
-              }}
-            >
-              📍 {evento.location}
-            </span>
+            {evento.locationUrl ? (
+              <a
+                href={evento.locationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#E0B046",
+                  fontSize: "15px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "7px",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  transition: "text-shadow 0.2s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.textShadow = "0 0 10px rgba(224,176,70,0.5)"}
+                onMouseLeave={e => e.currentTarget.style.textShadow = "none"}
+              >
+                📍 {evento.location} ↗
+              </a>
+            ) : (
+              <span
+                style={{
+                  color: "rgba(255,255,255,0.85)",
+                  fontSize: "15px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "7px",
+                }}
+              >
+                📍 {evento.location}
+              </span>
+            )}
             <span
               style={{
                 color: "rgba(255,255,255,0.85)",

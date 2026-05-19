@@ -45,8 +45,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log("Creating invitation for userId:", userId);
 
     const body = await request.json();
-    // Extraemos todos los campos del body, incluyendo imageUrl para la imagen de portada
-    const { title, date, location, accessCode, category, visibility, description, imageUrl } = body;
+    // Extraemos todos los campos del body, incluyendo imageUrl para la imagen de portada y locationUrl
+    const { title, date, location, locationUrl, accessCode, category, visibility, description, imageUrl } = body;
 
     // Validamos que los campos requeridos existan
     if (!title || !date || !location || !accessCode) {
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       title,
       date,
       location,
+      locationUrl: locationUrl || "",
       accessCode,
       createdBy: userId,
       // Incluir campos adicionales del formulario

@@ -32,6 +32,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
     title: event.title || "",
     date: event.date ? event.date.split("T")[0] : "",
     location: event.location || "",
+    locationUrl: event.locationUrl || "",
     description: event.description || "",
     category: event.category || "otro",
     imageUrl: event.imageUrl || "",
@@ -300,6 +301,18 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
                   required
                 />
               </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Link del mapa <span style={{ color: "#52525b", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></label>
+              <input
+                style={inputStyle}
+                placeholder="Ej: https://maps.app.goo.gl/..."
+                value={formData.locationUrl}
+                onChange={e => setFormData({ ...formData, locationUrl: e.target.value })}
+                onFocus={e => (e.target.style.borderColor = "#E0B046")}
+                onBlur={e => (e.target.style.borderColor = "#3f3f46")}
+              />
             </div>
 
             {/* Descripción */}

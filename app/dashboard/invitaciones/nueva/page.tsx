@@ -34,6 +34,7 @@ export default function NuevaInvitacion() {
     title: "",
     date: "",
     location: "",
+    locationUrl: "",
     accessCode: "", // Se generará automáticamente en el primer render
     description: "",
     imageUrl: "", 
@@ -353,6 +354,18 @@ export default function NuevaInvitacion() {
                 </div>
 
                 <div>
+                  <label style={labelStyle}>Link del mapa <span style={{ color: "#52525b", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></label>
+                  <input
+                    style={inputStyle}
+                    placeholder="Ej: https://maps.app.goo.gl/..."
+                    value={formData.locationUrl}
+                    onChange={e => setFormData({ ...formData, locationUrl: e.target.value })}
+                    onFocus={e => (e.target.style.borderColor = "#E0B046")}
+                    onBlur={e => (e.target.style.borderColor = "#3f3f46")}
+                  />
+                </div>
+
+                <div>
                   <label style={labelStyle}>Descripción <span style={{ color: "#52525b", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></label>
                   <textarea
                     style={{ ...inputStyle, resize: "none", height: "90px", lineHeight: 1.6 }}
@@ -526,7 +539,6 @@ export default function NuevaInvitacion() {
                 style={{ display: "none" }}
               />
 
-              {/* RESUMEN DEL EVENTO - CONFIRMACIÓN VISUAL */}
               <div style={{
                 backgroundColor: "#09090b",
                 border: "1px solid #27272a",
@@ -540,7 +552,18 @@ export default function NuevaInvitacion() {
                 </h3>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", color: "#71717a", fontSize: "14px" }}>
                   <span>📅 {formData.date || "Sin fecha"}</span>
-                  <span>📍 {formData.location || "Sin ubicación"}</span>
+                  {formData.locationUrl ? (
+                    <a 
+                      href={formData.locationUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ color: "#E0B046", textDecoration: "none", fontWeight: 700 }}
+                    >
+                      📍 {formData.location || "Sin ubicación"} ↗
+                    </a>
+                  ) : (
+                    <span>📍 {formData.location || "Sin ubicación"}</span>
+                  )}
                   <span style={{ color: "#E0B046", fontWeight: 700 }}>#{formData.accessCode}</span>
                 </div>
               </div>

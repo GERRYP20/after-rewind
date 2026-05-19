@@ -54,9 +54,30 @@ function PublicHeder() {
         {user && (
           <ul className={styles.navLinks}>
             {/* Actualizamos los enlaces a las rutas reales que creamos */}
-            <li><Link href="/dashboard">Mis Eventos</Link></li>
-            <li><Link href="/dashboard/invitaciones/nueva">Crear Evento</Link></li>
-            <li><Link href="/dashboard/invitaciones/participando">Invitaciones</Link></li>
+            <li>
+              <Link 
+                href="/dashboard" 
+                className={pathname === "/dashboard" ? styles.activeLink : ""}
+              >
+                Mis Eventos
+              </Link>
+            </li>
+            <li>
+              <Link 
+                href="/dashboard/invitaciones/nueva" 
+                className={pathname === "/dashboard/invitaciones/nueva" ? styles.activeLink : ""}
+              >
+                Crear Evento
+              </Link>
+            </li>
+            <li>
+              <Link 
+                href="/dashboard/invitaciones/participando" 
+                className={pathname === "/dashboard/invitaciones/participando" ? styles.activeLink : ""}
+              >
+                Invitaciones
+              </Link>
+            </li>
           </ul>
         )}
         

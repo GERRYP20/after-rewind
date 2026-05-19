@@ -32,6 +32,10 @@ type Filter = "todos" | "próximos" | "pasados";
 // =============================================================================
 // COMPONENTE: Card de evento individual
 // =============================================================================
+import Image from "next/image";
+
+// ... (existing constants)
+
 function EventCard({ evento, index }: { evento: Invitation; index: number }) {
   // Selecciona el estilo de portada según el índice
   const coverStyle = COVER_STYLES[index % COVER_STYLES.length];
@@ -75,20 +79,35 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
           el.style.boxShadow = "none";
         }}
       >
-        {/* ── PORTADA: zona de color con gradiente ────────────────────── */}
+        {/* ── PORTADA: zona de color con gradiente o imagen ────────────────────── */}
         <div
           style={{
-            ...coverStyle /* gradiente único por card */,
             height: "180px",
             position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "16px",
+            backgroundColor: "#09090b",
+            background: evento.imageUrl ? "none" : coverStyle.background,
           }}
         >
+          {evento.imageUrl && (
+            <Image 
+              src={evento.imageUrl} 
+              alt={evento.title} 
+              fill 
+              className="object-cover opacity-80 group-hover:opacity-100 transition-opacity" 
+              sizes="(max-width: 768px) 100vw, 30vw"
+            />
+          )}
+
+          {/* Overlay oscuro para asegurar contraste de badges */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.4) 100%)",
+            zIndex: 1
+          }} />
+
           {/* Badge de categoría — esquina superior derecha */}
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10 }}>
             <span
               style={{
                 backgroundColor: cat.bg,
@@ -111,15 +130,19 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
           {/* Badge de fecha — esquina inferior izquierda */}
           <div
             style={{
+              position: "absolute",
+              bottom: "16px",
+              left: "16px",
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              backgroundColor: "rgba(0,0,0,0.55)",
+              backgroundColor: "rgba(0,0,0,0.65)",
               backdropFilter: "blur(8px)",
               padding: "6px 12px",
               borderRadius: "10px",
               border: "1px solid rgba(255,255,255,0.1)",
               width: "fit-content",
+              zIndex: 10
             }}
           >
             <span style={{ fontSize: "13px" }}>📅</span>

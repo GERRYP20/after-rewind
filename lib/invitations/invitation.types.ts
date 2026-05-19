@@ -11,6 +11,8 @@ export interface Invitation {
   date: string;
   // Lugar donde se realizará el evento
   location: string;
+  // Link opcional a Google Maps u otro servicio de mapas
+  locationUrl?: string;
   // Código único que se comparten con los invitados para acceder al evento
   accessCode: string;
   // ID del usuario que creó la invitación (quien organiza el evento)
