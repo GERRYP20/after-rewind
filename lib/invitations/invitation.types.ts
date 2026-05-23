@@ -30,4 +30,8 @@ export interface Invitation {
   visibility?: 'public' | 'private';
   // Contador de invitados confirmados
   guestCount?: number;
+
+  // Información extendida del anfitrión (se une en la API)
+  hostName?: string;
+  hostPhoto?: string;
 }

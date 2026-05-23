@@ -250,15 +250,41 @@ function CommentItem({
           marginBottom: "12px",
         }}
       >
-        <span
-          style={{
-            color: "#E0B046",
-            fontSize: "13px",
-            fontWeight: 700,
-          }}
-        >
-          {comment.userName}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Avatar del autor */}
+          <div 
+            style={{ 
+              width: "28px", 
+              height: "28px", 
+              borderRadius: "50%", 
+              overflow: "hidden", 
+              backgroundColor: "#27272a",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "1px solid rgba(224, 176, 70, 0.2)"
+            }}
+          >
+            {comment.userPhoto ? (
+              <img 
+                src={comment.userPhoto} 
+                alt={comment.userName} 
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+              />
+            ) : (
+              <span style={{ fontSize: "14px" }}>👤</span>
+            )}
+          </div>
+          <span
+            style={{
+              color: "#E0B046",
+              fontSize: "13px",
+              fontWeight: 700,
+            }}
+          >
+            {comment.userName}
+          </span>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <span
             style={{

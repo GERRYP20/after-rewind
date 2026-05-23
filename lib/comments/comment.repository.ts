@@ -21,6 +21,7 @@ const mapComment = (doc: DocumentSnapshot | QueryDocumentSnapshot): Comment => {
     eventId: data.eventId,
     userId: data.userId,
     userName: data.userName,
+    userPhoto: data.userPhoto || null,
     text: data.text,
     createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
   } as Comment;
@@ -59,6 +60,20 @@ export const CommentRepository = {
       .collection(COLLECTION_NAME)
       .where("eventId", "==", eventId)
       .orderBy("createdAt", "desc")
+      .get();
+
+    return snapshot.docs.map(mapComment);
+  },
+
+  /**
+   * Obtiene todos los comentarios escritos por un usuario específico.
+   * @param userId - ID del usuario
+   * @returns Lista de comentarios
+   */
+  async getByUserId(userId: string): Promise<Comment[]> {
+    const snapshot = await db
+      .collection(COLLECTION_NAME)
+      .where("userId", "==", userId)
       .get();
 
     return snapshot.docs.map(mapComment);

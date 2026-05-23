@@ -34,12 +34,95 @@ interface QuickAction {
   action?: () => void;
 }
 
-// ─── Estadísticas de placeholder (UI estática, no funcional aún) ──────────────
-const STATS = [
-  { label: "Invitados", value: "—", icon: "👥" },
-  { label: "Fotos", value: "0", icon: "🖼" },
-  { label: "Días para el evento", value: "—", icon: "📅" },
-];
+// ─── Componente de Modal de Información Genérico ────────────────────────────
+interface InfoModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  icon?: string;
+  confirmText?: string;
+  onConfirm?: () => void;
+  showCancel?: boolean;
+}
+
+function InfoModal({ isOpen, onClose, title, message, icon = "✨", confirmText = "Entendido", onConfirm, showCancel = false }: InfoModalProps) {
+  if (!isOpen) return null;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        backdropFilter: "blur(4px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 2000,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: "#18181b",
+          border: "1px solid #3f3f46",
+          borderRadius: "20px",
+          padding: "32px",
+          maxWidth: "400px",
+          width: "90%",
+          textAlign: "center",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>{icon}</div>
+        <h3 style={{ color: "white", fontSize: "20px", fontWeight: 800, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{title}</h3>
+        <p style={{ color: "#a1a1aa", fontSize: "14px", lineHeight: 1.6, marginBottom: "24px" }}>{message}</p>
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+          {showCancel && (
+            <button
+              onClick={onClose}
+              style={{
+                padding: "12px 24px",
+                borderRadius: "10px",
+                backgroundColor: "transparent",
+                border: "1px solid #3f3f46",
+                color: "#a1a1aa",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer"
+              }}
+            >
+              Cancelar
+            </button>
+          )}
+          <button
+            onClick={() => {
+              if (onConfirm) onConfirm();
+              onClose();
+            }}
+            style={{
+              padding: "12px 24px",
+              borderRadius: "10px",
+              backgroundColor: "#E0B046",
+              border: "none",
+              color: "black",
+              fontSize: "13px",
+              fontWeight: 800,
+              cursor: "pointer",
+              textTransform: "uppercase"
+            }}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DetalleEvento() {
   const params = useParams();
@@ -53,6 +136,21 @@ export default function DetalleEvento() {
   const [comentarios, setComentarios] = useState<Comment[]>([]);
   const [fotos, setFotos] = useState<EventPhoto[]>([]);
   
+  // Estado para el modal de información genérico
+  const [infoModal, setInfoModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    icon?: string;
+    onConfirm?: () => void;
+    showCancel?: boolean;
+    confirmText?: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
+
   // Estados para edición y eliminación del evento
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -145,14 +243,36 @@ export default function DetalleEvento() {
         if (!guestsData.error) setGuestsData(guestsData);
         
         if (data.status === "pending") {
-          alert("Solicitud enviada. El creador debe aprobarte.");
+          setInfoModal({
+            isOpen: true,
+            title: "Solicitud Enviada",
+            message: "Tu solicitud ha sido enviada al anfitrión. Te notificaremos cuando seas aprobado.",
+            icon: "📨"
+          });
+        } else {
+          setInfoModal({
+            isOpen: true,
+            title: "¡Bienvenido!",
+            message: `Te has unido exitosamente a ${evento.title}. Ya puedes ver todas las fotos y comentarios.`,
+            icon: "🎉"
+          });
         }
       } else {
-        alert(data.error || "Error al unirse al evento");
+        setInfoModal({
+          isOpen: true,
+          title: "Error",
+          message: data.error || "Hubo un problema al intentar unirte al evento.",
+          icon: "❌"
+        });
       }
     } catch (error) {
       console.error("Error joining event:", error);
-      alert("Error al intentar unirse al evento");
+      setInfoModal({
+        isOpen: true,
+        title: "Error",
+        message: "No se pudo establecer conexión con el servidor.",
+        icon: "🔌"
+      });
     } finally {
       setIsJoining(false);
     }
@@ -160,30 +280,53 @@ export default function DetalleEvento() {
 
   // Función para salir del evento (voluntariamente)
   const handleLeaveEvent = async () => {
-    if (!confirm("¿Estás seguro de que quieres salir de este evento? Ya no podrás ver las fotos ni los comentarios.")) return;
-    
-    setIsJoining(true); // Reusamos este estado para bloquear la UI
-    try {
-      const res = await fetch(`/api/invitations/${id}/guests`, {
-        method: "DELETE"
-      });
-      
-      if (res.ok) {
-        // Recargar datos de invitados para actualizar el estado UI a "none"
-        const guestsRes = await fetch(`/api/invitations/${id}/guests`);
-        const guestsData = await guestsRes.json();
-        if (!guestsData.error) setGuestsData(guestsData);
-        alert("Has salido del evento.");
-      } else {
-        const data = await res.json();
-        alert(data.error || "Error al salir del evento");
+    setInfoModal({
+      isOpen: true,
+      title: "¿Salir del evento?",
+      message: "¿Estás seguro de que quieres salir de este evento? Ya no podrás ver las fotos ni los comentarios compartidos.",
+      icon: "🚪",
+      showCancel: true,
+      confirmText: "Salir ahora",
+      onConfirm: async () => {
+        setIsJoining(true); // Reusamos este estado para bloquear la UI
+        try {
+          const res = await fetch(`/api/invitations/${id}/guests`, {
+            method: "DELETE"
+          });
+          
+          if (res.ok) {
+            // Recargar datos de invitados para actualizar el estado UI a "none"
+            const guestsRes = await fetch(`/api/invitations/${id}/guests`);
+            const guestsData = await guestsRes.json();
+            if (!guestsData.error) setGuestsData(guestsData);
+            setInfoModal({
+              isOpen: true,
+              title: "Has salido",
+              message: "Ya no formas parte de este evento.",
+              icon: "👋"
+            });
+          } else {
+            const data = await res.json();
+            setInfoModal({
+              isOpen: true,
+              title: "Error",
+              message: data.error || "Hubo un problema al intentar salir del evento.",
+              icon: "❌"
+            });
+          }
+        } catch (error) {
+          console.error("Error leaving event:", error);
+          setInfoModal({
+            isOpen: true,
+            title: "Error",
+            message: "Ocurrió un error inesperado.",
+            icon: "⚠️"
+          });
+        } finally {
+          setIsJoining(false);
+        }
       }
-    } catch (error) {
-      console.error("Error leaving event:", error);
-      alert("Error al intentar salir del evento");
-    } finally {
-      setIsJoining(false);
-    }
+    });
   };
 
   // Copia el código de acceso al portapapeles
@@ -326,36 +469,44 @@ export default function DetalleEvento() {
   // Rechaza a un invitado pendiente
   const handleRejectGuest = async (guestDocId?: string) => {
     if (!guestDocId) return;
-    if (!confirm("¿Estás seguro de que quieres rechazar esta solicitud?")) return;
     
-    setProcessingGuest(guestDocId);
-    try {
-      const res = await fetch(`/api/invitations/${id}/guests`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guestDocId, action: "reject" }),
-      });
+    setInfoModal({
+      isOpen: true,
+      title: "¿Rechazar invitado?",
+      message: "¿Estás seguro de que quieres rechazar esta solicitud de acceso?",
+      icon: "👤",
+      showCancel: true,
+      confirmText: "Rechazar",
+      onConfirm: async () => {
+        setProcessingGuest(guestDocId);
+        try {
+          const res = await fetch(`/api/invitations/${id}/guests`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ guestDocId, action: "reject" }),
+          });
 
-      if (res.ok) {
-        // Recargar los datos de invitados
-        const data = await fetch(`/api/invitations/${id}/guests`).then(r => r.json());
-        if (!data.error) setGuestsData(data);
-      } else {
-        alert("Error al rechazar el invitado");
+          if (res.ok) {
+            // Recargar los datos de invitados
+            const data = await fetch(`/api/invitations/${id}/guests`).then(r => r.json());
+            if (!data.error) setGuestsData(data);
+          } else {
+            alert("Error al rechazar el invitado");
+          }
+        } catch (error) {
+          console.error("Error rejecting guest:", error);
+          alert("Error al rechazar el invitado");
+        } finally {
+          setProcessingGuest(null);
+        }
       }
-    } catch (error) {
-      console.error("Error rejecting guest:", error);
-      alert("Error al rechazar el invitado");
-    } finally {
-      setProcessingGuest(null);
-    }
+    });
   };
 
-  // Calcula los días que faltan para el evento
   // Calcula los días que faltan para el evento con UseMemo
   const diasRestantes = useMemo(() => {
     if (!evento) return null;
-    const hoy = new Date(); // forma correcta de obtener la fecha actual en React
+    const hoy = new Date();
     return Math.ceil(
       (new Date(evento.date).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24),
     );
@@ -461,11 +612,10 @@ export default function DetalleEvento() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-end",
-          padding: "40px 48px",
+          padding: "40px 48px 80px 48px",
           overflow: "hidden",
         }}
       >
-        {/* Imagen de fondo de Cloudinary si existe */}
         {evento.imageUrl && (
           <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
             <Image 
@@ -478,7 +628,6 @@ export default function DetalleEvento() {
           </div>
         )}
 
-        {/* Patrón de textura superpuesto para darle profundidad */}
         <div
           style={{
             position: "absolute",
@@ -489,7 +638,6 @@ export default function DetalleEvento() {
           }}
         />
 
-        {/* Overlay oscuro en la parte inferior para que el texto sea legible */}
         <div
           style={{
             position: "absolute",
@@ -502,7 +650,6 @@ export default function DetalleEvento() {
           }}
         />
 
-        {/* Botón de volver — encima de todo */}
         <div
           style={{
             position: "absolute",
@@ -533,7 +680,6 @@ export default function DetalleEvento() {
           </Link>
         </div>
 
-        {/* Badge de categoría — esquina superior derecha */}
         <div
           style={{
             position: "absolute",
@@ -560,7 +706,6 @@ export default function DetalleEvento() {
           </span>
         </div>
 
-        {/* Título del evento — sobre el overlay */}
         <div style={{ position: "relative", zIndex: 2 }}>
           <h1
             style={{
@@ -576,51 +721,23 @@ export default function DetalleEvento() {
             {evento.title}
           </h1>
 
-          {/* Metadatos rápidos: ubicación y fecha */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-            {evento.locationUrl ? (
-              <a
-                href={evento.locationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#E0B046",
-                  fontSize: "15px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "7px",
-                  textDecoration: "none",
-                  fontWeight: 700,
-                  transition: "text-shadow 0.2s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.textShadow = "0 0 10px rgba(224,176,70,0.5)"}
-                onMouseLeave={e => e.currentTarget.style.textShadow = "none"}
-              >
-                📍 {evento.location} ↗
-              </a>
-            ) : (
-              <span
-                style={{
-                  color: "rgba(255,255,255,0.85)",
-                  fontSize: "15px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "7px",
-                }}
-              >
-                📍 {evento.location}
-              </span>
-            )}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginTop: "8px" }}>
             <span
               style={{
-                color: "rgba(255,255,255,0.85)",
-                fontSize: "15px",
+                color: "white",
+                fontSize: "18px",
+                fontWeight: 700,
                 display: "flex",
                 alignItems: "center",
-                gap: "7px",
+                gap: "10px",
+                backgroundColor: "rgba(255,255,255,0.1)",
+                padding: "8px 16px",
+                borderRadius: "10px",
+                backdropFilter: "blur(4px)",
+                border: "1px solid rgba(255,255,255,0.1)"
               }}
             >
-              📅{" "}
+              <span style={{ fontSize: "22px" }}>📅</span>{" "}
               {new Date(evento.date).toLocaleDateString("es-MX", {
                 dateStyle: "full",
               })}
@@ -629,13 +746,92 @@ export default function DetalleEvento() {
         </div>
       </div>
 
+      {/* ── BARRA DE INFORMACIÓN DESTACADA (Ubicación y Anfitrión) ── */}
+      {(currentUserGuestStatus === "owner" || currentUserGuestStatus === "confirmed") && (
+        <div style={{ maxWidth: "960px", margin: "-40px auto 32px auto", padding: "0 24px", position: "relative", zIndex: 20 }}>
+            <div style={{
+              backgroundColor: "#18181b",
+              border: "1px solid #E0B046",
+              borderRadius: "16px",
+              padding: "20px 32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+              flexWrap: "wrap",
+              gap: "24px"
+            }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                      <span style={{ fontSize: "32px" }}>📍</span>
+                      <div>
+                          <p style={{ color: "#71717a", fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Lugar del evento</p>
+                          <p style={{ color: "white", fontSize: "18px", fontWeight: 900, margin: 0 }}>{evento.location}</p>
+                      </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: "32px" }}>
+                      <div style={{ 
+                          width: "40px", 
+                          height: "40px", 
+                          borderRadius: "50%", 
+                          overflow: "hidden", 
+                          backgroundColor: "#27272a",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "2px solid rgba(224, 176, 70, 0.3)"
+                      }}>
+                          {evento.hostPhoto ? (
+                              <img 
+                                  src={evento.hostPhoto} 
+                                  alt={evento.hostName} 
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                              />
+                          ) : (
+                              <span style={{ fontSize: "20px" }}>👤</span>
+                          )}
+                      </div>
+                      <div>
+                          <p style={{ color: "#71717a", fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Anfitrión</p>
+                          <p style={{ color: "white", fontSize: "18px", fontWeight: 900, margin: 0 }}>{evento.hostName}</p>
+                      </div>
+                  </div>
+              </div>
+
+              {evento.locationUrl && (
+                  <a 
+                      href={evento.locationUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{
+                          backgroundColor: "#E0B046",
+                          color: "black",
+                          padding: "12px 24px",
+                          borderRadius: "10px",
+                          fontSize: "12px",
+                          fontWeight: 900,
+                          textDecoration: "none",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          transition: "transform 0.2s"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                  >
+                      Mapa ↗
+                  </a>
+              )}
+            </div>
+        </div>
+      )}
+
       {/* ── CONTENIDO DINÁMICO SEGÚN ESTADO DE INVITADO ────────────────────── */}
       <div style={{ maxWidth: "960px", margin: "0 auto", padding: "0 24px" }}>
         
-        {/* CASO A: El usuario NO está unido o está PENDIENTE */}
         {(currentUserGuestStatus === "none" || currentUserGuestStatus === "pending") ? (
           <div style={{
-            marginTop: "40px",
+            marginTop: "16px",
             backgroundColor: "#18181b",
             border: "1px solid #3f3f46",
             borderRadius: "24px",
@@ -718,9 +914,7 @@ export default function DetalleEvento() {
             )}
           </div>
         ) : (
-          /* CASO B: El usuario es DUEÑO o está CONFIRMADO */
           <>
-            {/* ── STATS ROW ─────────────────────────────────────────────────── */}
             <div
               style={{
                 display: "grid",
@@ -763,7 +957,6 @@ export default function DetalleEvento() {
                       margin: 0,
                     }}
                   >
-                    {/* Muestra los días reales para el campo correspondiente */}
                     {stat.label === "Días para el evento"
                       ? diasRestantes !== null && diasRestantes > 0
                         ? diasRestantes
@@ -776,7 +969,6 @@ export default function DetalleEvento() {
               ))}
             </div>
 
-            {/* ── GRID PRINCIPAL: código + acciones + galería ────────────────── */}
             <div
               style={{
                 display: "grid",
@@ -784,7 +976,6 @@ export default function DetalleEvento() {
                 gap: "20px",
               }}
             >
-              {/* ── Tarjeta: Código de acceso ──────────────────────────────────── */}
               <div
                 style={{
                   backgroundColor: "#18181b",
@@ -809,7 +1000,6 @@ export default function DetalleEvento() {
                   Código de acceso
                 </p>
 
-                {/* Display grande del código */}
                 <div
                   style={{
                     background: "linear-gradient(135deg, #09090b, #18181b)",
@@ -834,7 +1024,6 @@ export default function DetalleEvento() {
                   </p>
                 </div>
 
-                {/* Botón de copiar código */}
                 <button
                   onClick={copiarCodigo}
                   style={{
@@ -855,7 +1044,6 @@ export default function DetalleEvento() {
                   {copiado ? "✓ ¡Copiado!" : "⎘ Copiar código"}
                 </button>
 
-                {/* Instrucción para los invitados */}
                 <p
                   style={{
                     color: "#52525b",
@@ -870,7 +1058,6 @@ export default function DetalleEvento() {
                 </p>
               </div>
 
-              {/* ── Tarjeta: Acciones rápidas ──────────────────────────────────── */}
               <div
                 style={{
                   backgroundColor: "#18181b",
@@ -895,7 +1082,6 @@ export default function DetalleEvento() {
                   Acciones
                 </p>
 
-                {/* Lista de acciones disponibles */}
                 {[
                   {
                     icon: "🖼",
@@ -909,7 +1095,6 @@ export default function DetalleEvento() {
                     desc: "Envía el enlace a tus invitados",
                     color: "#38bdf8",
                   },
-                  // Opción para salir del evento si eres un invitado confirmado
                   ...(currentUserGuestStatus === "confirmed" ? [
                     {
                       icon: "🚪",
@@ -919,7 +1104,6 @@ export default function DetalleEvento() {
                       action: handleLeaveEvent,
                     }
                   ] : []),
-                  // Solo mostrar botones de editar y eliminar si el usuario es el creador
                   ...(isOwner ? [                    {
                       icon: "✏️",
                       label: "Editar evento",
@@ -964,7 +1148,6 @@ export default function DetalleEvento() {
                       e.currentTarget.style.backgroundColor = "#09090b";
                     }}
                   >
-                    {/* Icono con fondo de color */}
                     <span
                       style={{
                         width: "36px",
@@ -1000,7 +1183,6 @@ export default function DetalleEvento() {
               </div>
             </div>
 
-            {/* ── Sección: Invitados ─────────────────────── */}
             <div
               style={{
                 backgroundColor: "#18181b",
@@ -1010,7 +1192,6 @@ export default function DetalleEvento() {
                 marginTop: "20px",
               }}
             >
-              {/* Encabezado de la sección */}
               <div
                 style={{
                   display: "flex",
@@ -1043,7 +1224,6 @@ export default function DetalleEvento() {
                     {guestsData?.guestCount || evento?.guestCount || 0} Confirmados
                   </h2>
                 </div>
-                {/* Badge de visibilidad */}
                 <span
                   style={{
                     padding: "6px 12px",
@@ -1067,7 +1247,6 @@ export default function DetalleEvento() {
                 </span>
               </div>
 
-              {/* Lista de invitados confirmados */}
               {guestsData?.confirmed && guestsData.confirmed.length > 0 && (
                 <div style={{ marginBottom: "20px" }}>
                   <p style={{ color: "#52525b", fontSize: "11px", marginBottom: "12px", fontWeight: 600 }}>
@@ -1087,7 +1266,6 @@ export default function DetalleEvento() {
                           border: "1px solid #27272a",
                         }}
                       >
-                        {/* Avatar placeholder */}
                         <div
                           style={{
                             width: "32px",
@@ -1098,9 +1276,19 @@ export default function DetalleEvento() {
                             alignItems: "center",
                             justifyContent: "center",
                             fontSize: "14px",
+                            overflow: "hidden",
+                            border: "1px solid rgba(224, 176, 70, 0.2)"
                           }}
                         >
-                          👤
+                          {guest.userPhoto ? (
+                            <img 
+                              src={guest.userPhoto} 
+                              alt={guest.userName} 
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                            />
+                          ) : (
+                            "👤"
+                          )}
                         </div>
                         <div style={{ flex: 1 }}>
                           <p style={{ color: "white", fontSize: "13px", fontWeight: 600, margin: 0 }}>
@@ -1126,7 +1314,6 @@ export default function DetalleEvento() {
                 </div>
               )}
 
-              {/* Lista de invitados pendientes (solo para el creador) */}
               {guestsData?.isOwner && guestsData?.pending && guestsData.pending.length > 0 && (
                 <div>
                   <p style={{ color: "#f59e0b", fontSize: "11px", marginBottom: "12px", fontWeight: 600 }}>
@@ -1146,7 +1333,6 @@ export default function DetalleEvento() {
                           border: "1px solid #27272a",
                         }}
                       >
-                        {/* Avatar placeholder */}
                         <div
                           style={{
                             width: "32px",
@@ -1157,9 +1343,19 @@ export default function DetalleEvento() {
                             alignItems: "center",
                             justifyContent: "center",
                             fontSize: "14px",
+                            overflow: "hidden",
+                            border: "1px solid rgba(224, 176, 70, 0.2)"
                           }}
                         >
-                          👤
+                          {guest.userPhoto ? (
+                            <img 
+                              src={guest.userPhoto} 
+                              alt={guest.userName} 
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                            />
+                          ) : (
+                            "👤"
+                          )}
                         </div>
                         <div style={{ flex: 1 }}>
                           <p style={{ color: "white", fontSize: "13px", fontWeight: 600, margin: 0 }}>
@@ -1169,7 +1365,6 @@ export default function DetalleEvento() {
                             Esperando aprobación
                           </p>
                         </div>
-                        {/* Botones de aprobar/rechazar */}
                         <div style={{ display: "flex", gap: "8px" }}>
                           <button
                             onClick={() => handleApproveGuest(guest.id)}
@@ -1224,7 +1419,6 @@ export default function DetalleEvento() {
                 </div>
               )}
 
-              {/* Mensaje si no hay invitados */}
               {(!guestsData?.confirmed || guestsData.confirmed.length === 0) && 
                (!guestsData?.pending || guestsData.pending.length === 0) && (
                 <p style={{ color: "#52525b", fontSize: "13px", textAlign: "center", padding: "20px" }}>
@@ -1233,7 +1427,6 @@ export default function DetalleEvento() {
               )}
             </div>
 
-            {/* ── Sección: Álbum de Fotos ─────────────────────── */}
             <div
               style={{
                 backgroundColor: "#18181b",
@@ -1289,7 +1482,6 @@ export default function DetalleEvento() {
                 </span>
               </div>
 
-              {/* Componente para subir fotos (se pasa la función para recargar) */}
               <PhotoUpload eventId={id as string} onUploadSuccess={cargarFotos} />
 
               <div style={{ marginTop: "24px" }}>
@@ -1302,7 +1494,6 @@ export default function DetalleEvento() {
               </div>
             </div>
 
-            {/* ── Sección: Comentarios ─────────────────────────────────────────────── */}
             <div
               style={{
                 backgroundColor: "#18181b",
@@ -1369,7 +1560,6 @@ export default function DetalleEvento() {
               </div>
             </div>
 
-            {/* ── Footer de la tarjeta: metadatos del sistema ──────────────────── */}
             <div
               style={{
                 marginTop: "20px",
@@ -1398,7 +1588,6 @@ export default function DetalleEvento() {
         )}
       </div>
 
-      {/* Modal de confirmación de eliminación del evento */}
       {showDeleteModal && (
         <div
           style={{
@@ -1472,14 +1661,6 @@ export default function DetalleEvento() {
                   cursor: deletingEvent ? "not-allowed" : "pointer",
                   transition: "all 0.2s",
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#52525b";
-                  e.currentTarget.style.color = "#fafafa";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#3f3f46";
-                  e.currentTarget.style.color = "#a1a1aa";
-                }}
               >
                 Cancelar
               </button>
@@ -1497,12 +1678,6 @@ export default function DetalleEvento() {
                   cursor: deletingEvent ? "not-allowed" : "pointer",
                   transition: "all 0.2s",
                 }}
-                onMouseEnter={(e) => {
-                  if (!deletingEvent) e.currentTarget.style.backgroundColor = "#e11d48";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = deletingEvent ? "#52525b" : "#f43f5e";
-                }}
               >
                 {deletingEvent ? "Eliminando..." : "Eliminar"}
               </button>
@@ -1510,6 +1685,17 @@ export default function DetalleEvento() {
           </div>
         </div>
       )}
+
+      <InfoModal 
+        isOpen={infoModal.isOpen}
+        onClose={() => setInfoModal(prev => ({ ...prev, isOpen: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        icon={infoModal.icon}
+        onConfirm={infoModal.onConfirm}
+        showCancel={infoModal.showCancel}
+        confirmText={infoModal.confirmText}
+      />
     </div>
   );
 }

@@ -110,7 +110,7 @@ function LoginForm() {
 
       const result = await signInWithPopup(auth, provider);
 
-      const idToken = result.user.getIdToken();
+      const idToken = await result.user.getIdToken();
       const res = await fetch("/api/sessionLogin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

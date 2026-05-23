@@ -125,6 +125,13 @@
   justify-content: center;
   font-size: 14px;
   line-height: 1;
+  overflow: hidden;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-cover: cover;
 }
 
 .userName {
@@ -159,6 +166,23 @@
   font-size: 12px;
 }
 
+.dropdownItem {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  text-decoration: none;
+  color: #ddd;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  text-align: left;
+}
+
+.dropdownItem:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
 .dropdownLogout {
   width: 100%;
   padding: 12px;
@@ -177,6 +201,30 @@
 }
 
 .dropdownLogout:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dropdownDelete {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: none;
+  border-top: 1px solid #3f3f46;
+  color: #f43f5e;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 0 0 8px 8px;
+  transition: background-color 0.2s;
+  margin-top: 4px;
+}
+
+.dropdownDelete:hover {
+  background-color: rgba(244, 63, 94, 0.1);
+}
+
+.dropdownDelete:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

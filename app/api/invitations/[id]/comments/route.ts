@@ -81,10 +81,11 @@ export async function POST(
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const userId = decodedToken.uid; // ID único del usuario desde Firebase Auth
 
-    // DEBUG: Verificar que estamos extrayendo el uid correctamente
-    console.log("DEBUG - userId extraído del token de sesión:", userId);
+    // Obtener datos frescos desde Firebase Auth (la cookie puede estar obsoleta)
+    const userRecord = await adminAuth.getUser(userId);
+    const userName = userRecord.displayName || decodedToken.name || "Usuario";
+    const userPhoto = userRecord.photoURL || null;
 
-    const userName = decodedToken.name || decodedToken.displayName || "Usuario";
     const { id: eventId } = await params;
 
     // Obtiene el texto del comentario del body
@@ -101,6 +102,7 @@ export async function POST(
       eventId: eventId,
       userId: userId,  // Explicitamente incluido el userId del usuario autenticado
       userName: userName,
+      userPhoto: userPhoto,
       text: text.trim(),
     };
 
@@ -111,6 +113,7 @@ export async function POST(
       eventId: commentPayload.eventId,
       userId: commentPayload.userId,
       userName: commentPayload.userName,
+      userPhoto: commentPayload.userPhoto || undefined,
       text: commentPayload.text,
     });
 

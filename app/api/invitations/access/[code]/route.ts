@@ -46,8 +46,12 @@ export async function POST(
     // 2. Decodificar el token para obtener información del usuario
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const userId = decodedToken.uid;
-    // Usar name o displayName del token, o fallback a "Usuario"
-    const userName = decodedToken.name || decodedToken.displayName || "Usuario";
+
+    // Obtener los datos más recientes del usuario desde Firebase Auth
+    // (La cookie de sesión puede tener metadatos viejos si el usuario cambió su foto recientemente)
+    const userRecord = await adminAuth.getUser(userId);
+    const userName = userRecord.displayName || decodedToken.name || "Usuario";
+    const userPhoto = userRecord.photoURL || null;
 
     const { code } = await params;
 
@@ -80,7 +84,7 @@ export async function POST(
       // Evento público: el usuario se une automáticamente como confirmado
       
       // Usar transacción para crear el guest e incrementar el contador atómicamente
-      await createConfirmedGuestWithTransaction(event.id!, userId, userName);
+      await createConfirmedGuestWithTransaction(event.id!, userId, userName, userPhoto);
       
       return NextResponse.json({
         success: true,
@@ -95,6 +99,7 @@ export async function POST(
         eventId: event.id!,
         userId,
         userName,
+        userPhoto: userPhoto || undefined,
         status: 'pending',
         createdAt: new Date().toISOString(),
       });
@@ -120,7 +125,8 @@ export async function POST(
 async function createConfirmedGuestWithTransaction(
   eventId: string,
   userId: string,
-  userName: string
+  userName: string,
+  userPhoto: string | null
 ): Promise<void> {
   const { db } = await import("@/lib/firebase-admin");
   
@@ -131,6 +137,7 @@ async function createConfirmedGuestWithTransaction(
       eventId,
       userId,
       userName,
+      userPhoto,
       status: 'confirmed',
       createdAt: new Date(),
     });

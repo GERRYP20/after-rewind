@@ -7,6 +7,7 @@ export interface Comment {
   eventId: string;                 // ID del evento al que pertenece el comentario
   userId: string;                  // ID del usuario que escribió el comentario
   userName: string;                // Nombre del usuario que escreveu el comentario
+  userPhoto?: string;              // URL de la foto de perfil del usuario
   text: string;                   // Contenido del comentario
   createdAt?: string;             // Fecha de creación en formato ISO (opcional)
   isOwner?: boolean;              // Indica si el usuario actual es el autor del comentario

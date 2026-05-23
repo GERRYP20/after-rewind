@@ -14,6 +14,7 @@ function PublicHeder() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   // Estado para controlar la visibilidad del menú desplegable del usuario
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -32,6 +33,41 @@ function PublicHeder() {
       console.error("Error al cerrar sesión:", error);
     } finally {
       setLoggingOut(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+
+    const confirmed = window.confirm(
+      "¿Estás seguro de que deseas eliminar tu cuenta? Esta acción es irreversible y eliminará todos tus datos (eventos, fotos, comentarios e invitaciones)."
+    );
+
+    if (!confirmed) return;
+
+    setDeletingAccount(true);
+    try {
+      // Llamar al endpoint de borrado en cascada
+      const response = await fetch("/api/user/delete", { method: "DELETE" });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al eliminar la cuenta");
+      }
+
+      // Cerrar sesión en Firebase client-side por si acaso (aunque la cookie ya se borró)
+      await firebaseSignOut(auth);
+
+      // Redirigir a la página de inicio y refrescar
+      router.push("/");
+      router.refresh();
+      alert("Tu cuenta y todos tus datos han sido eliminados exitosamente.");
+    } catch (error: unknown) {
+      console.error("Error al eliminar la cuenta:", error);
+      const errorMessage = error instanceof Error ? error.message : "Hubo un error al intentar eliminar tu cuenta por completo. Por favor, inténtalo de nuevo más tarde.";
+      alert(errorMessage);
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -95,9 +131,19 @@ function PublicHeder() {
               className={styles.userBoxContent}
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
-              {/* Avatar genérico del usuario (icono) */}
+              {/* Avatar genérico del usuario (icono) o foto de perfil */}
               <div className={styles.userAvatar}>
-                👤
+                {user.photoURL ? (
+                  <Image 
+                    src={user.photoURL} 
+                    alt="Perfil" 
+                    width={24} 
+                    height={24} 
+                    className={styles.avatarImage} 
+                  />
+                ) : (
+                  "👤"
+                )}
               </div>
               {/* Nombre del usuario (displayName o parte del email) */}
               <span className={styles.userName}>
@@ -112,13 +158,29 @@ function PublicHeder() {
                 <div className={styles.dropdownHeader}>
                   <span className={styles.dropdownEmail}>{user.email}</span>
                 </div>
+                {/* Link a Mi Perfil */}
+                <Link 
+                  href="/dashboard/perfil" 
+                  className={styles.dropdownItem}
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  👤 Mi Perfil
+                </Link>
                 {/* Botón para cerrar sesión */}
                 <button 
                   onClick={handleLogout}
-                  disabled={loggingOut}
+                  disabled={loggingOut || deletingAccount}
                   className={styles.dropdownLogout}
                 >
                   {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+                </button>
+                {/* Botón para eliminar cuenta */}
+                <button 
+                  onClick={handleDeleteAccount}
+                  disabled={loggingOut || deletingAccount}
+                  className={styles.dropdownDelete}
+                >
+                  {deletingAccount ? "Eliminando..." : "Eliminar cuenta"}
                 </button>
               </div>
             )}

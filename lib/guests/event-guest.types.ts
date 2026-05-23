@@ -16,6 +16,8 @@ export interface EventGuest {
   userId: string;
   // Nombre del usuario (obtenido del token de sesión)
   userName: string;
+  // URL de la foto de perfil (obtenida del token de sesión)
+  userPhoto?: string;
   // Estado de la solicitud del invitado
   // 'pending' = esperando aprobación del creador (para eventos privados)
   // 'confirmed' = confirmado y contando en guestCount

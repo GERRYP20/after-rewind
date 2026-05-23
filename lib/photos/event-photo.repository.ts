@@ -43,6 +43,16 @@ export const EventPhotoRepository = {
     return snapshot.docs.map(mapEventPhoto);
   },
 
+  // Trae todas las fotos subidas por un usuario específico
+  async getByUserId(userId: string): Promise<EventPhoto[]> {
+    const snapshot = await db
+      .collection(COLLECTION_NAME)
+      .where("userId", "==", userId)
+      .get();
+
+    return snapshot.docs.map(mapEventPhoto);
+  },
+
   // Borra una foto (por ejemplo si el administrador decide eliminarla)
   async delete(photoId: string): Promise<void> {
     await db.collection(COLLECTION_NAME).doc(photoId).delete();

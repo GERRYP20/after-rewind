@@ -20,6 +20,17 @@ export async function GET(
     if (!invitation) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
+
+    // ─── UNIÓN DE DATOS: Obtener info del anfitrión desde Firebase Auth ──────────
+    try {
+      const hostRecord = await adminAuth.getUser(invitation.createdBy);
+      invitation.hostName = hostRecord.displayName || hostRecord.email?.split('@')[0] || "Anfitrión";
+      invitation.hostPhoto = hostRecord.photoURL || undefined;
+    } catch (e) {
+      console.error(`No se pudo obtener info del anfitrión ${invitation.createdBy}:`, e);
+      invitation.hostName = "Anfitrión";
+    }
+    // ──────────────────────────────────────────────────────────────────────────
     
     return NextResponse.json(invitation);
   } catch (error: unknown) {

@@ -26,6 +26,7 @@ const mapEventGuest = (doc: DocumentSnapshot | QueryDocumentSnapshot): EventGues
     eventId: data.eventId,
     userId: data.userId,
     userName: data.userName,
+    userPhoto: data.userPhoto || null,
     status: data.status,
     createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
   } as EventGuest;
@@ -59,6 +60,20 @@ export const EventGuestRepository = {
       .collection(COLLECTION_NAME)
       .where("eventId", "==", eventId)
       .orderBy("createdAt", "desc")
+      .get();
+
+    return snapshot.docs.map(mapEventGuest);
+  },
+
+  /**
+   * Obtiene todos los registros de invitado de un usuario específico (independiente del estado)
+   * @param userId - ID del usuario
+   * @returns Lista de registros de invitado
+   */
+  async getByUserId(userId: string): Promise<EventGuest[]> {
+    const snapshot = await db
+      .collection(COLLECTION_NAME)
+      .where("userId", "==", userId)
       .get();
 
     return snapshot.docs.map(mapEventGuest);
