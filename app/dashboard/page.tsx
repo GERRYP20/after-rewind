@@ -441,7 +441,7 @@ export default function Dashboard() {
             maxWidth: "480px",
           }}
         >
-          Gestiona tus eventos, revisa estadísticas y administra álbumes compartidos.
+          Crea eventos, invita a tus amigos y administra álbumes compartidos.
         </p>
       </header>
 

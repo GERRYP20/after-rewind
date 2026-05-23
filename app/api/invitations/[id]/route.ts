@@ -2,6 +2,10 @@ import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebase-admin";
 import { InvitationRepository } from "@/lib/invitations/invitation.repository";
+import { EventPhotoRepository } from "@/lib/photos/event-photo.repository";
+import { CommentRepository } from "@/lib/comments/comment.repository";
+import { EventGuestRepository } from "@/lib/guests/event-guest.repository";
+import { deleteFromCloudinary } from "@/lib/cloudinary-utils";
 
 // Nombre de la cookie de sesión
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
@@ -121,6 +125,35 @@ export async function DELETE(
     if (invitation.createdBy !== currentUserId) {
       return NextResponse.json({ error: "No tienes permiso para eliminar esta invitación" }, { status: 403 });
     }
+
+    // ─── BORRADO EN CASCADA: Limpiar datos asociados ────────────────────────
+    try {
+      console.log(`Iniciando limpieza total para el evento ${id}`);
+
+      // 1. Limpiar fotos (Cloudinary + Firestore)
+      const photos = await EventPhotoRepository.getByEventId(id).catch(() => []);
+      for (const photo of photos) {
+        if (photo.url) await deleteFromCloudinary(photo.url).catch(() => {});
+        await EventPhotoRepository.delete(photo.id).catch(() => {});
+      }
+
+      // 2. Limpiar comentarios
+      const comments = await CommentRepository.getByEvent(id).catch(() => []);
+      for (const comment of comments) {
+        await CommentRepository.delete(comment.id).catch(() => {});
+      }
+
+      // 3. Limpiar registros de invitados
+      const guests = await EventGuestRepository.getByEventId(id).catch(() => []);
+      for (const guest of guests) {
+        // rejectGuest simplemente borra el documento sin afectar otros contadores
+        await EventGuestRepository.rejectGuest(guest.id).catch(() => {});
+      }
+      
+    } catch (e) {
+      console.error("Error en limpieza en cascada durante borrado de invitación:", e);
+    }
+    // ──────────────────────────────────────────────────────────────────────────
 
     // 5. Eliminar la invitación de la base de datos
     await InvitationRepository.delete(id);

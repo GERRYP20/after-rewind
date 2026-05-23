@@ -12,6 +12,7 @@ import { EventPhotoRepository } from "@/lib/photos/event-photo.repository";
 import { CommentRepository } from "@/lib/comments/comment.repository";
 import { EventGuestRepository } from "@/lib/guests/event-guest.repository";
 import { QueryDocumentSnapshot } from "firebase-admin/firestore";
+import { deleteFromCloudinary } from "@/lib/cloudinary-utils";
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
@@ -66,7 +67,10 @@ export async function DELETE() {
         const photos = await EventPhotoRepository.getByEventId(eventId).catch(() => []);
         console.log(`- Borrando ${photos.length} fotos del evento ${eventId}`);
         for (const photo of photos) {
-          if (photo.id) await EventPhotoRepository.delete(photo.id).catch(err => console.error(`  Error borrando foto ${photo.id}:`, err));
+          if (photo.id) {
+            if (photo.url) await deleteFromCloudinary(photo.url).catch(err => console.error(`  Error físico Cloudinary ${photo.id}:`, err));
+            await EventPhotoRepository.delete(photo.id).catch(err => console.error(`  Error borrando foto ${photo.id}:`, err));
+          }
         }
 
         // Borrar todos los comentarios del evento

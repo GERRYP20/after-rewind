@@ -56,13 +56,30 @@ export const EventGuestRepository = {
    * @returns Lista de invitados del evento
    */
   async getByEventId(eventId: string): Promise<EventGuest[]> {
-    const snapshot = await db
-      .collection(COLLECTION_NAME)
-      .where("eventId", "==", eventId)
-      .orderBy("createdAt", "desc")
-      .get();
+    try {
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("eventId", "==", eventId)
+        .orderBy("createdAt", "desc")
+        .get();
 
-    return snapshot.docs.map(mapEventGuest);
+      return snapshot.docs.map(mapEventGuest);
+    } catch (error) {
+      console.error("Error en getByEventId (posible falta de índice):", error);
+      // Fallback: traer sin ordenar si falla el índice
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("eventId", "==", eventId)
+        .get();
+      
+      const guests = snapshot.docs.map(mapEventGuest);
+      // Ordenar manualmente en memoria
+      return guests.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+    }
   },
 
   /**

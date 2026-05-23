@@ -34,13 +34,30 @@ export const EventPhotoRepository = {
 
   // Trae todas las fotos de un evento específico, ordenadas de la más nueva a la más vieja
   async getByEventId(eventId: string): Promise<EventPhoto[]> {
-    const snapshot = await db
-      .collection(COLLECTION_NAME)
-      .where("eventId", "==", eventId)
-      .orderBy("createdAt", "desc")
-      .get();
+    try {
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("eventId", "==", eventId)
+        .orderBy("createdAt", "desc")
+        .get();
 
-    return snapshot.docs.map(mapEventPhoto);
+      return snapshot.docs.map(mapEventPhoto);
+    } catch (error) {
+      console.error("Error en getByEventId de fotos (posible falta de índice):", error);
+      // Fallback: traer sin ordenar
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("eventId", "==", eventId)
+        .get();
+      
+      const photos = snapshot.docs.map(mapEventPhoto);
+      // Ordenar manualmente en memoria
+      return photos.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+    }
   },
 
   // Trae todas las fotos subidas por un usuario específico

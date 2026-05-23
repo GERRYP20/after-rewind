@@ -121,11 +121,32 @@ export default function PerfilPage() {
   const { user, loading: authLoading } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [localPhotoURL, setLocalPhotoURL] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    totalEvents: 0,
+    upcomingEvents: 0,
+    daysActive: 0
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   useEffect(() => {
-    if (user) setLocalPhotoURL(user.photoURL);
+    if (user) {
+      setLocalPhotoURL(user.photoURL);
+      
+      // Cargar estadísticas reales
+      fetch("/api/user/stats")
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) {
+            setStats({
+              totalEvents: data.totalEvents || 0,
+              upcomingEvents: data.upcomingEvents || 0,
+              daysActive: data.daysActive || 0
+            });
+          }
+        })
+        .catch(err => console.error("Error cargando stats:", err));
+    }
   }, [user]);
 
   useEffect(() => {
@@ -153,11 +174,26 @@ export default function PerfilPage() {
       formData.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Error al subir");
-      const { url } = await res.json();
+      const { url: newPhotoURL } = await res.json();
+      
       if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { photoURL: url });
-        setLocalPhotoURL(url);
+        const oldPhotoURL = auth.currentUser.photoURL;
+        
+        // 2. Actualizar perfil en Firebase Auth
+        await updateProfile(auth.currentUser, { photoURL: newPhotoURL });
+        setLocalPhotoURL(newPhotoURL);
         router.refresh();
+
+        // 3. Eliminar foto antigua de Cloudinary (si existía y era de Cloudinary)
+        if (oldPhotoURL && oldPhotoURL.includes("res.cloudinary.com")) {
+          console.log("Eliminando foto de perfil antigua...");
+          fetch("/api/upload", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: oldPhotoURL }),
+          }).catch(err => console.error("Error al borrar foto antigua:", err));
+        }
+
         alert("¡Foto actualizada!");
       }
     } catch (err) {
@@ -345,9 +381,9 @@ export default function PerfilPage() {
                   Actividad
                 </p>
                 <div style={{ display: "flex", gap: 12 }}>
-                  <StatCard num="12" sub="Eventos totales" />
-                  <StatCard num="3" sub="Próximos" />
-                  <StatCard num="487" sub="Días activo" />
+                  <StatCard num={String(stats.totalEvents)} sub="Eventos totales" />
+                  <StatCard num={String(stats.upcomingEvents)} sub="Próximos" />
+                  <StatCard num={String(stats.daysActive)} sub="Días activo" />
                 </div>
               </div>
 

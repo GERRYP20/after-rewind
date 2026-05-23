@@ -56,13 +56,30 @@ export const CommentRepository = {
    * @returns Lista de comentarios ordenados por fecha (más recientes primero)
    */
   async getByEvent(eventId: string): Promise<Comment[]> {
-    const snapshot = await db
-      .collection(COLLECTION_NAME)
-      .where("eventId", "==", eventId)
-      .orderBy("createdAt", "desc")
-      .get();
+    try {
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("eventId", "==", eventId)
+        .orderBy("createdAt", "desc")
+        .get();
 
-    return snapshot.docs.map(mapComment);
+      return snapshot.docs.map(mapComment);
+    } catch (error) {
+      console.error("Error en getByEvent de comentarios (posible falta de índice):", error);
+      // Fallback: traer sin ordenar
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("eventId", "==", eventId)
+        .get();
+      
+      const comments = snapshot.docs.map(mapComment);
+      // Ordenar manualmente en memoria
+      return comments.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+    }
   },
 
   /**

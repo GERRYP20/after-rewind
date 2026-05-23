@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebase-admin";
 import { InvitationRepository } from "@/lib/invitations/invitation.repository";
 import { EventPhotoRepository } from "@/lib/photos/event-photo.repository";
+import { deleteFromCloudinary } from "@/lib/cloudinary-utils";
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
@@ -47,11 +48,13 @@ export async function DELETE(
       return NextResponse.json({ error: "No tienes permiso para eliminar esta foto" }, { status: 403 });
     }
 
-    // 4. Eliminar el registro de Firestore
-    await EventPhotoRepository.delete(photoId);
+    // 4. Eliminar físicamente de Cloudinary
+    if (photo.url) {
+      await deleteFromCloudinary(photo.url);
+    }
 
-    // Nota: Por ahora solo borramos el registro en Firestore. 
-    // Borrar la imagen física en Cloudinary requeriría guardar el public_id.
+    // 5. Eliminar el registro de Firestore
+    await EventPhotoRepository.delete(photoId);
     
     return NextResponse.json({ message: "Foto eliminada correctamente" });
 

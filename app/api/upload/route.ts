@@ -56,3 +56,41 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+/**
+ * DELETE: Elimina una imagen físicamente de Cloudinary.
+ * Requiere que el usuario esté autenticado.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    // 1. Verificar sesión
+    const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(COOKIE_NAME)?.value;
+
+    if (!sessionCookie) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    await adminAuth.verifySessionCookie(sessionCookie, false);
+
+    // 2. Obtener URL del body
+    const { url } = await request.json();
+    if (!url) {
+      return NextResponse.json({ error: "URL no proporcionada" }, { status: 400 });
+    }
+
+    // 3. Eliminar físicamente
+    const success = await deleteFromCloudinary(url);
+
+    if (success) {
+      return NextResponse.json({ message: "Imagen eliminada de Cloudinary" });
+    } else {
+      return NextResponse.json({ error: "No se pudo eliminar la imagen" }, { status: 500 });
+    }
+
+  } catch (error: unknown) {
+    console.error("Error en DELETE /api/upload:", error);
+    return NextResponse.json({ error: "Error al procesar el borrado" }, { status: 500 });
+  }
+}

@@ -45,16 +45,48 @@ export const InvitationRepository = {
 
   // Método para traer todas las invitaciones de un usuario
   async getByUser(userId: string): Promise<Invitation[]> {
+    try {
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("createdBy", "==", userId)
+        .orderBy("date", "desc")
+        .get();
+
+      return snapshot.docs.map(mapInvitation);
+    } catch (error) {
+      console.error("Error en getByUser (posible falta de índice):", error);
+      // Fallback: traer sin ordenar si falla el índice
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("createdBy", "==", userId)
+        .get();
+      
+      const invitations = snapshot.docs.map(mapInvitation);
+      // Ordenar manualmente en memoria como plan B
+      return invitations.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateB - dateA;
+      });
+    }
+  },
+
+  /**
+   * Cuenta cuántos eventos ha creado un usuario
+   * @param userId - ID del usuario
+   * @returns Número de eventos
+   */
+  async countByUser(userId: string): Promise<number> {
     const snapshot = await db
       .collection(COLLECTION_NAME)
       .where("createdBy", "==", userId)
-      .orderBy("createdAt", "desc")
+      .count()
       .get();
 
-    return snapshot.docs.map(mapInvitation);
+    return snapshot.data().count;
   },
 
-  // Método para buscar una invitación por su código de acceso
+  // Método para obtener una invitación por su código de acceso único
   async getByCode(code: string): Promise<Invitation | null> {
     const snapshot = await db
       .collection(COLLECTION_NAME)
