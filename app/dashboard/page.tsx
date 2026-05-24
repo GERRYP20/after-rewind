@@ -430,10 +430,10 @@ export default function Dashboard() {
   return (
     <div
       style={{
-        paddingTop: "7rem",
+        paddingTop: "clamp(10rem, 15vw, 12rem)",
         paddingBottom: "6rem",
-        paddingLeft: "3rem",
-        paddingRight: "3rem",
+        paddingLeft: "clamp(1rem, 5vw, 3rem)",
+        paddingRight: "clamp(1rem, 5vw, 3rem)",
         maxWidth: "1400px",
         margin: "0 auto",
         minHeight: "100vh",
