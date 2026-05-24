@@ -1,3 +1,4 @@
+// Layout principal de la aplicación: define la estructura base, fuentes y metadatos globales
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
