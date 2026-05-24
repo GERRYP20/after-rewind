@@ -649,7 +649,7 @@ export default function DetalleEvento() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-end",
-          padding: "40px 48px 80px 48px",
+          padding: "40px clamp(24px, 6vw, 48px) 80px clamp(24px, 6vw, 48px)",
           overflow: "hidden",
         }}
       >
@@ -955,7 +955,7 @@ export default function DetalleEvento() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
+                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
                 gap: "16px",
                 marginTop: "-28px",
                 marginBottom: "32px",
@@ -1009,7 +1009,7 @@ export default function DetalleEvento() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
                 gap: "20px",
               }}
             >

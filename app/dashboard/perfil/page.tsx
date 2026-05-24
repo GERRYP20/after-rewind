@@ -380,7 +380,11 @@ export default function PerfilPage() {
                 <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(196,155,74,0.45)", fontWeight: 500, margin: "0 0 16px" }}>
                   Actividad
                 </p>
-                <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", 
+                  gap: "12px" 
+                }}>
                   <StatCard num={String(stats.totalEvents)} sub="Eventos totales" />
                   <StatCard num={String(stats.upcomingEvents)} sub="Próximos" />
                   <StatCard num={String(stats.daysActive)} sub="Días activo" />

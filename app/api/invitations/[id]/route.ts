@@ -134,20 +134,20 @@ export async function DELETE(
       const photos = await EventPhotoRepository.getByEventId(id).catch(() => []);
       for (const photo of photos) {
         if (photo.url) await deleteFromCloudinary(photo.url).catch(() => {});
-        await EventPhotoRepository.delete(photo.id).catch(() => {});
+        if (photo.id) await EventPhotoRepository.delete(photo.id).catch(() => {});
       }
 
       // 2. Limpiar comentarios
       const comments = await CommentRepository.getByEvent(id).catch(() => []);
       for (const comment of comments) {
-        await CommentRepository.delete(comment.id).catch(() => {});
+        if (comment.id) await CommentRepository.delete(comment.id).catch(() => {});
       }
 
       // 3. Limpiar registros de invitados
       const guests = await EventGuestRepository.getByEventId(id).catch(() => []);
       for (const guest of guests) {
         // rejectGuest simplemente borra el documento sin afectar otros contadores
-        await EventGuestRepository.rejectGuest(guest.id).catch(() => {});
+        if (guest.id) await EventGuestRepository.rejectGuest(guest.id).catch(() => {});
       }
       
     } catch (e) {

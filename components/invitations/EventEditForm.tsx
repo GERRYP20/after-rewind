@@ -276,7 +276,11 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
             </div>
 
             {/* Fecha y ubicación */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
+              gap: "16px" 
+            }}>
               <div>
                 <label style={labelStyle}>Fecha del evento</label>
                 <input

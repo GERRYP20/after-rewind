@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+import { cookies } from "next/headers";
+import { adminAuth } from "@/lib/firebase-admin";
+import { deleteFromCloudinary } from "@/lib/cloudinary-utils";
 
 // Configuración de Cloudinary
 cloudinary.config({
@@ -8,46 +11,41 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+/**
+ * POST: Sube un archivo a Cloudinary y retorna la URL
+ */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    // Tipamos el archivo como File o null
-    const file = formData.get("file") as File | null;
+    const file = formData.get("file") as File;
 
     if (!file) {
       return NextResponse.json({ error: "No se proporcionó ningún archivo" }, { status: 400 });
     }
 
-    // Convertimos a Buffer para Node.js
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    /**
-     * Prometizamos la subida. 
-     * Usamos <UploadApiResponse> para que TypeScript sepa que 
-     * el 'result' tendrá propiedades como .secure_url y .public_id
-     */
-    const uploadResponse = await new Promise<UploadApiResponse>((resolve, reject) => {
+    // Subir a Cloudinary usando una promesa para manejar el stream
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
-        { 
-          resource_type: "auto", 
-          folder: "after-rewind" 
+        {
+          folder: "after-rewind", // Carpeta organizada para el proyecto
+          resource_type: "auto",
         },
         (error, result) => {
-          if (error || !result) {
-            reject(error || new Error("Error en la subida a Cloudinary"));
-          } else {
-            resolve(result); // Aquí result ya tiene el tipo correcto
-          }
+          if (error || !result) reject(error);
+          else resolve(result);
         }
       ).end(buffer);
     });
 
-    // Ahora podemos acceder a .secure_url con autocompletado y sin errores
-    return NextResponse.json({ url: uploadResponse.secure_url });
+    return NextResponse.json({ 
+      url: result.secure_url,
+      public_id: result.public_id 
+    });
 
   } catch (error: unknown) {
-    // Manejo de errores usando unknown + instanceof
     const errorMessage = error instanceof Error ? error.message : "Error desconocido";
     console.error("Error uploading file:", errorMessage);
     return NextResponse.json(
