@@ -90,38 +90,52 @@ export const EventGuestRepository = {
 
   /**
    * Filtra invitados por estado (pendiente o confirmado)
+   * Incluye fallback por si falta el índice compuesto
    */
   async getByEventIdAndStatus(eventId: string, status: 'pending' | 'confirmed'): Promise<EventGuest[]> {
-    const snapshot = await db
-      .collection(COLLECTION_NAME)
-      .where("eventId", "==", eventId)
-      .where("status", "==", status)
-      .get();
+    try {
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("eventId", "==", eventId)
+        .where("status", "==", status)
+        .get();
 
-    const guests = snapshot.docs.map(mapEventGuest);
-    
-    // Ordenamos en memoria para no depender de índices compuestos inmediatos
-    return guests.sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
-      return dateB - dateA;
-    });
+      const guests = snapshot.docs.map(mapEventGuest);
+      
+      // Ordenamos en memoria para no depender de índices compuestos inmediatos
+      return guests.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+    } catch (error) {
+      console.warn("Falta índice compuesto para getByEventIdAndStatus, usando fallback en memoria:", error);
+      const allGuests = await this.getByEventId(eventId);
+      return allGuests.filter(g => g.status === status);
+    }
   },
 
   /**
    * Verifica si un usuario ya solicitó unirse a un evento
+   * Incluye un fallback por si falta el índice compuesto en Firestore
    */
   async getByEventIdAndUserId(eventId: string, userId: string): Promise<EventGuest | null> {
-    const snapshot = await db
-      .collection(COLLECTION_NAME)
-      .where("eventId", "==", eventId)
-      .where("userId", "==", userId)
-      .limit(1)
-      .get();
+    try {
+      const snapshot = await db
+        .collection(COLLECTION_NAME)
+        .where("eventId", "==", eventId)
+        .where("userId", "==", userId)
+        .limit(1)
+        .get();
 
-    if (snapshot.empty) return null;
-
-    return mapEventGuest(snapshot.docs[0]);
+      if (snapshot.empty) return null;
+      return mapEventGuest(snapshot.docs[0]);
+    } catch (error) {
+      console.warn("Falta índice compuesto para getByEventIdAndUserId, usando fallback en memoria:", error);
+      // Fallback: buscamos todos los invitados del evento y filtramos localmente
+      const guests = await this.getByEventId(eventId);
+      return guests.find(g => g.userId === userId) || null;
+    }
   },
 
   /**

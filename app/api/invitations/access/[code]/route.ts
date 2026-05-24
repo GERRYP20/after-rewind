@@ -11,7 +11,7 @@
 
 import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
-import { adminAuth } from "@/lib/firebase-admin";
+import { adminAuth, db } from "@/lib/firebase-admin";
 import { InvitationRepository } from "@/lib/invitations/invitation.repository";
 import { EventGuestRepository } from "@/lib/guests/event-guest.repository";
 
@@ -98,7 +98,7 @@ export async function POST(
         eventId: event.id!,
         userId,
         userName,
-        userPhoto: userPhoto || undefined,
+        userPhoto: userPhoto || null, // Aseguramos que sea null y no undefined
         status: 'pending',
         createdAt: new Date().toISOString(),
       });
@@ -113,7 +113,8 @@ export async function POST(
 
   } catch (error: unknown) {
     console.error("Error al unirse al evento:", error);
-    return NextResponse.json({ error: "Error al unirse al evento" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    return NextResponse.json({ error: `Error al unirse al evento: ${message}` }, { status: 500 });
   }
 }
 
@@ -127,8 +128,6 @@ async function createConfirmedGuestWithTransaction(
   userName: string,
   userPhoto: string | null
 ): Promise<void> {
-  const { db } = await import("@/lib/firebase-admin");
-  
   await db.runTransaction(async (transaction) => {
     // 1. Crear el documento del invitado
     const guestRef = db.collection("event_guests").doc();
@@ -136,14 +135,14 @@ async function createConfirmedGuestWithTransaction(
       eventId,
       userId,
       userName,
-      userPhoto,
+      userPhoto: userPhoto || null, // Aseguramos que sea null y no undefined
       status: 'confirmed',
       createdAt: new Date(),
     });
 
     // 2. Incrementar el guestCount del evento
     const eventRef = db.collection("invitations").doc(eventId);
-    const eventDoc = await eventRef.get();
+    const eventDoc = await transaction.get(eventRef);
     
     if (eventDoc.exists) {
       const currentCount = eventDoc.data()?.guestCount || 0;

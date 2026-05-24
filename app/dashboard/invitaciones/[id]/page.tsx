@@ -232,7 +232,7 @@ export default function DetalleEvento() {
     
     setIsJoining(true);
     try {
-      const res = await fetch(`/api/invitations/access/${evento.accessCode}`, {
+      const res = await fetch(`/api/invitations/access/${encodeURIComponent(evento.accessCode)}`, {
         method: "POST"
       });
       const data = await res.json();
