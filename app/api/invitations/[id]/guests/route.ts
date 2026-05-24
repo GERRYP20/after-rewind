@@ -83,6 +83,10 @@ export async function PATCH(
     } else if (action === 'reject') {
       await EventGuestRepository.rejectGuest(guestDocId);
       return NextResponse.json({ success: true });
+    } else if (action === 'remove') {
+      // removeGuest maneja correctamente el decremento del contador si estaba confirmado
+      await EventGuestRepository.removeGuest(guestDocId, eventId);
+      return NextResponse.json({ success: true });
     }
     return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
   } catch (error: unknown) {
