@@ -163,12 +163,29 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
               margin: 0,
               overflow: "hidden",
               display: "-webkit-box",
-              WebkitLineClamp: 2,
+              WebkitLineClamp: 1,
               WebkitBoxOrient: "vertical",
             }}
           >
             {evento.title}
           </h3>
+
+          {evento.description && (
+            <p
+              style={{
+                color: "#71717a",
+                fontSize: "12px",
+                margin: 0,
+                overflow: "hidden",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                lineHeight: 1.5,
+              }}
+            >
+              {evento.description}
+            </p>
+          )}
 
           <p
             style={{

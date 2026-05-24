@@ -784,7 +784,7 @@ export default function DetalleEvento() {
         </div>
       </div>
 
-      {/* ── BARRA DE INFORMACIÓN DESTACADA (Ubicación y Anfitrión) ── */}
+      {/* ── BARRA DE INFORMACIÓN DESTACADA (Ubicación, Anfitrión y Descripción) ── */}
       {(currentUserGuestStatus === "owner" || currentUserGuestStatus === "confirmed") && (
         <div style={{ maxWidth: "960px", margin: "-40px auto 32px auto", padding: "0 24px", position: "relative", zIndex: 20 }}>
             <div style={{
@@ -793,72 +793,92 @@ export default function DetalleEvento() {
               borderRadius: "16px",
               padding: "20px 32px",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              flexDirection: "column",
+              gap: "20px",
               boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
-              flexWrap: "wrap",
-              gap: "24px"
             }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                      <span style={{ fontSize: "32px" }}>📍</span>
-                      <div>
-                          <p style={{ color: "#71717a", fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Lugar del evento</p>
-                          <p style={{ color: "white", fontSize: "18px", fontWeight: 900, margin: 0 }}>{evento.location}</p>
-                      </div>
-                  </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "24px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                        <span style={{ fontSize: "32px" }}>📍</span>
+                        <div>
+                            <p style={{ color: "#71717a", fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Lugar del evento</p>
+                            <p style={{ color: "white", fontSize: "18px", fontWeight: 900, margin: 0 }}>{evento.location}</p>
+                        </div>
+                    </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px", borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: "32px" }}>
-                      <div style={{ 
-                          width: "40px", 
-                          height: "40px", 
-                          borderRadius: "50%", 
-                          overflow: "hidden", 
-                          backgroundColor: "#27272a",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          border: "2px solid rgba(224, 176, 70, 0.3)"
-                      }}>
-                          {evento.hostPhoto ? (
-                              <img 
-                                  src={evento.hostPhoto} 
-                                  alt={evento.hostName} 
-                                  style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                              />
-                          ) : (
-                              <span style={{ fontSize: "20px" }}>👤</span>
-                          )}
-                      </div>
-                      <div>
-                          <p style={{ color: "#71717a", fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Anfitrión</p>
-                          <p style={{ color: "white", fontSize: "18px", fontWeight: 900, margin: 0 }}>{evento.hostName}</p>
-                      </div>
-                  </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px", borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: "32px" }}>
+                        <div style={{ 
+                            width: "40px", 
+                            height: "40px", 
+                            borderRadius: "50%", 
+                            overflow: "hidden", 
+                            backgroundColor: "#27272a",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "2px solid rgba(224, 176, 70, 0.3)"
+                        }}>
+                            {evento.hostPhoto ? (
+                                <img 
+                                    src={evento.hostPhoto} 
+                                    alt={evento.hostName} 
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                />
+                            ) : (
+                                <span style={{ fontSize: "20px" }}>👤</span>
+                            )}
+                        </div>
+                        <div>
+                            <p style={{ color: "#71717a", fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Anfitrión</p>
+                            <p style={{ color: "white", fontSize: "18px", fontWeight: 900, margin: 0 }}>{evento.hostName}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {evento.locationUrl && (
+                    <a 
+                        href={evento.locationUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{
+                            backgroundColor: "#E0B046",
+                            color: "black",
+                            padding: "12px 24px",
+                            borderRadius: "10px",
+                            fontSize: "12px",
+                            fontWeight: 900,
+                            textDecoration: "none",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            transition: "transform 0.2s"
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+                        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                        Mapa ↗
+                    </a>
+                )}
               </div>
 
-              {evento.locationUrl && (
-                  <a 
-                      href={evento.locationUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{
-                          backgroundColor: "#E0B046",
-                          color: "black",
-                          padding: "12px 24px",
-                          borderRadius: "10px",
-                          fontSize: "12px",
-                          fontWeight: 900,
-                          textDecoration: "none",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                          transition: "transform 0.2s"
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                  >
-                      Mapa ↗
-                  </a>
+              {/* Nueva sección para la descripción dentro de la barra de información */}
+              {evento.description && (
+                <div style={{ 
+                  borderTop: "1px solid rgba(255,255,255,0.05)", 
+                  paddingTop: "16px",
+                  marginTop: "4px"
+                }}>
+                  <p style={{ color: "#71717a", fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px 0" }}>Descripción del evento</p>
+                  <p style={{ 
+                    color: "rgba(255,255,255,0.8)", 
+                    fontSize: "14px", 
+                    lineHeight: 1.6, 
+                    margin: 0,
+                    fontWeight: 500
+                  }}>
+                    {evento.description}
+                  </p>
+                </div>
               )}
             </div>
         </div>
