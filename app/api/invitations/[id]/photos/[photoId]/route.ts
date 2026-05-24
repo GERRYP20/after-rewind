@@ -26,21 +26,21 @@ export async function DELETE(
     
     const { id: eventId, photoId } = await params;
 
-    // 1. Obtener la información de la foto
+    // 1. Obtener la información de la foto para validar quién la subió
     const photo = await EventPhotoRepository.getById(photoId);
     if (!photo) {
       return NextResponse.json({ error: "Foto no encontrada" }, { status: 404 });
     }
 
-    // 2. Obtener el evento para saber quién es el dueño
+    // 2. Obtener el evento para saber quién es el dueño del mismo
     const event = await InvitationRepository.getById(eventId);
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
     // 3. Verificar permisos de eliminación:
-    // - El usuario que subió la foto puede borrarla.
-    // - El dueño del evento puede borrar cualquier foto.
+    // - El autor de la foto puede borrarla.
+    // - El anfitrión del evento tiene poder para borrar cualquier foto de su galería.
     const isPhotoOwner = photo.userId === userId;
     const isEventOwner = event.createdBy === userId;
 
@@ -48,12 +48,12 @@ export async function DELETE(
       return NextResponse.json({ error: "No tienes permiso para eliminar esta foto" }, { status: 403 });
     }
 
-    // 4. Eliminar físicamente de Cloudinary
+    // 4. Eliminar el archivo físico de los servidores de Cloudinary
     if (photo.url) {
       await deleteFromCloudinary(photo.url);
     }
 
-    // 5. Eliminar el registro de Firestore
+    // 5. Borrar el registro de la foto en nuestra base de datos Firestore
     await EventPhotoRepository.delete(photoId);
     
     return NextResponse.json({ message: "Foto eliminada correctamente" });

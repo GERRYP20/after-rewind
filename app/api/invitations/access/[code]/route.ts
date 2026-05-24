@@ -43,30 +43,29 @@ export async function POST(
       return NextResponse.json({ error: "No hay sesión" }, { status: 401 });
     }
 
-    // 2. Decodificar el token para obtener información del usuario
+    // 2. Obtener identidad del usuario desde el token
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const userId = decodedToken.uid;
 
-    // Obtener los datos más recientes del usuario desde Firebase Auth
-    // (La cookie de sesión puede tener metadatos viejos si el usuario cambió su foto recientemente)
+    // Obtenemos el perfil actualizado del usuario desde Firebase
     const userRecord = await adminAuth.getUser(userId);
     const userName = userRecord.displayName || decodedToken.name || "Usuario";
     const userPhoto = userRecord.photoURL || null;
 
     const { code } = await params;
 
-    // 3. Buscar el evento por su código de acceso
+    // 3. Intentar localizar el evento usando el código de acceso proporcionado
     const event = await InvitationRepository.getByCode(code);
 
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
-    // 4. Verificar si el usuario ya es un invitado de este evento (evitar duplicados)
+    // 4. Revisar si el usuario ya está registrado en este evento para evitar duplicados
     const existingGuest = await EventGuestRepository.getByEventIdAndUserId(event.id!, userId);
 
     if (existingGuest) {
-      // El usuario ya está unido al evento - devolver su estado actual
+      // Si ya existe el registro, informamos al usuario de su estado actual
       return NextResponse.json({
         success: true,
         message: "Ya eres invitado de este evento",
@@ -76,14 +75,14 @@ export async function POST(
       });
     }
 
-    // 5. Determinar la visibilidad del evento (default: public para eventos antiguos)
+    // 5. Verificamos si el evento es de acceso libre o requiere aprobación previa
     const visibility = event.visibility || 'public';
 
-    // 6. Según la visibilidad, crear el invitado con el estado apropiado
+    // 6. Procesamos la entrada según el tipo de visibilidad
     if (visibility === 'public') {
-      // Evento público: el usuario se une automáticamente como confirmado
+      // En eventos públicos, el acceso es inmediato
       
-      // Usar transacción para crear el guest e incrementar el contador atómicamente
+      // Se usa una transacción para asegurar la consistencia del contador de invitados
       await createConfirmedGuestWithTransaction(event.id!, userId, userName, userPhoto);
       
       return NextResponse.json({
@@ -93,7 +92,7 @@ export async function POST(
         eventId: event.id,
       });
     } else {
-      // Evento privado: el usuario se une como pendiente de aprobación
+      // En eventos privados, se crea una solicitud que el anfitrión debe aprobar
       
       await EventGuestRepository.create({
         eventId: event.id!,
@@ -106,7 +105,7 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        message: "Solicitud enviada. El creador del evento debe aprobte.",
+        message: "Solicitud enviada. El creador del evento debe aprobarte.",
         status: 'pending',
         eventId: event.id,
       });

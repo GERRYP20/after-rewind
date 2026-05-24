@@ -1,3 +1,4 @@
+// Página de creación: formulario paso a paso para configurar un nuevo evento y subir su portada
 "use client";
 
 import React, { useState, useRef } from "react";

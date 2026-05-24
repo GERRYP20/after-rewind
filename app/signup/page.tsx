@@ -1,3 +1,4 @@
+// Página de registro: creación de nuevas cuentas de usuario con validación y perfil inicial
 /**
  * Página de Registro con Glassmorphism
  * 

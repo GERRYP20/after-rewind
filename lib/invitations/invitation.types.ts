@@ -3,35 +3,20 @@
 
 // Esta interfaz define cómo se estructura una invitación en la base de datos
 export interface Invitation {
-  // Identificador único de la invitación en Firestore (opcional porque se genera al crear)
-  id?: string;
-  // Nombre o título del evento, por ejemplo "Boda de Ana y Juan"
-  title: string;
-  // Fecha del evento en formato string (YYYY-MM-DD)
-  date: string;
-  // Lugar donde se realizará el evento
-  location: string;
-  // Link opcional a Google Maps u otro servicio de mapas
-  locationUrl?: string;
-  // Código único que se comparten con los invitados para acceder al evento
-  accessCode: string;
-  // ID del usuario que creó la invitación (quien organiza el evento)
-  createdBy: string;
-  // Fecha y hora exactas de cuando se creó la invitación en el sistema
-  createdAt?: string;
-
-  imageUrl?: string; // URL de la imagen de portada del evento (opcional)
-  updatedAt?: string; // Fecha de última actualización (opcional)
-  description?: string; // Descripción del evento (opcional)
-  category?: string; // Categoría del evento (opcional)
-  
-  // Visibility: público (cualquiera con código se une) o privado (requiere aprobación)
-  // Por defecto es 'public' para eventos existentes sin este campo
-  visibility?: 'public' | 'private';
-  // Contador de invitados confirmados
-  guestCount?: number;
-
-  // Información extendida del anfitrión (se une en la API)
-  hostName?: string;
-  hostPhoto?: string;
+  id?: string;             // ID autogenerado por Firestore
+  title: string;          // Título del evento
+  date: string;           // Fecha programada
+  location: string;       // Lugar del evento
+  locationUrl?: string;   // Link a Google Maps
+  accessCode: string;     // Código para que los invitados se unan
+  createdBy: string;      // ID del creador
+  createdAt?: string;     // Fecha de creación del registro
+  imageUrl?: string;      // Imagen de portada
+  updatedAt?: string;     // Última edición
+  description?: string;   // Detalles adicionales
+  category?: string;      // Tipo de evento
+  visibility?: 'public' | 'private'; // ¿Cualquiera puede unirse o requiere aprobación?
+  guestCount?: number;    // Total de confirmados
+  hostName?: string;      // Nombre del anfitrión (para el UI)
+  hostPhoto?: string;     // Foto del anfitrión (para el UI)
 }

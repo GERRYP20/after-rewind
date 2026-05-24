@@ -14,18 +14,20 @@ const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
 // Auxiliar para verificar si el usuario tiene permiso para ver/subir fotos
 async function verifyAccess(eventId: string, userId: string) {
+  // Obtenemos los detalles del evento
   const event = await InvitationRepository.getById(eventId);
   if (!event) return { error: "Evento no encontrado", status: 404 };
 
-  // Si es el dueño, tiene acceso total
+  // Si es el dueño, tiene acceso total a la galería
   if (event.createdBy === userId) return { authorized: true, event, isOwner: true };
 
-  // Si no es el dueño, verificamos si es un invitado confirmado
+  // Si no es el dueño, verificamos si es un invitado con asistencia confirmada
   const guestRecord = await EventGuestRepository.getByEventIdAndUserId(eventId, userId);
   if (guestRecord && guestRecord.status === "confirmed") {
     return { authorized: true, event, isOwner: false };
   }
 
+  // Si no es dueño ni invitado confirmado, se deniega el acceso
   return { error: "No tienes permiso para acceder a esta galería", status: 403 };
 }
 
@@ -45,9 +47,11 @@ export async function GET(
     const userId = decodedToken.uid;
     const { id: eventId } = await params;
 
+    // Validamos permisos antes de entregar la lista de fotos
     const access = await verifyAccess(eventId, userId);
     if (access.error) return NextResponse.json({ error: access.error }, { status: access.status });
 
+    // Recupera todas las referencias de fotos guardadas para este evento
     const photos = await EventPhotoRepository.getByEventId(eventId);
     return NextResponse.json(photos);
 
@@ -75,14 +79,17 @@ export async function POST(
     
     const { id: eventId } = await params;
 
+    // Solo dueños e invitados confirmados pueden subir fotos
     const access = await verifyAccess(eventId, userId);
     if (access.error) return NextResponse.json({ error: access.error }, { status: access.status });
 
     const body = await request.json();
     const { url } = body;
 
+    // La URL de Cloudinary es necesaria para crear el registro en Firestore
     if (!url) return NextResponse.json({ error: "La URL de la foto es obligatoria" }, { status: 400 });
 
+    // Guardamos la referencia de la foto vinculada al evento y al usuario
     const photoId = await EventPhotoRepository.create({
       eventId,
       userId,

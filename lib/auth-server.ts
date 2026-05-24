@@ -37,13 +37,12 @@ const COOKIE = process.env.SESSION_COOKIE_NAME ?? "__session";
  * ```
  */
 export async function getServerUser() {
-  // Obtenemos la cookie de sesión
+  // Extraemos el token de la cookie de sesión configurada
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
 
   try {
-    // Verificamos la cookie con Firebase Admin SDK
-    // El segundo parámetro (true) verifica si la cookie fue revocada
+    // Validamos el token con Firebase Admin y verificamos si ha sido revocado
     const decoded = await adminAuth.verifySessionCookie(token, true);
     return decoded as {
       uid: string;

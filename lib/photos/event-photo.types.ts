@@ -4,12 +4,12 @@
  */
 
 export interface EventPhoto {
-  id?: string;             // ID único generado por Firestore
-  eventId: string;         // A qué evento pertenece esta foto
-  userId: string;          // Quién subió la foto
-  userName: string;        // Nombre de la persona que la subió
-  url: string;             // Link seguro de Cloudinary
-  createdAt: string;       // Cuándo se subió
+  id?: string;             // ID único en Firestore
+  eventId: string;         // Referencia al evento
+  userId: string;          // Autor de la subida
+  userName: string;        // Nombre del autor
+  url: string;             // URL de la imagen en Cloudinary
+  createdAt: string;       // Fecha de subida
 }
 
 // Tipo simplificado para cuando estamos creando una foto nueva

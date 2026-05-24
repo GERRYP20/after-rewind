@@ -1,3 +1,4 @@
+// Perfil del usuario: gestión de información personal, estadísticas de actividad y foto de perfil
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";

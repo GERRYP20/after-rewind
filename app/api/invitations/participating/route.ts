@@ -20,26 +20,25 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: "No hay sesión" }, { status: 401 });
     }
 
-    // 2. Decodificar el token para obtener el ID del usuario
+    // 2. Obtener identidad del usuario desde el token verificado
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const userId: string = decodedToken.uid;
 
-    // 3. Obtener los registros de invitados confirmados para este usuario
+    // 3. Recuperar todos los registros donde el usuario figura como invitado confirmado
     const joinedEventRecords = await EventGuestRepository.getJoinedEventsByUserId(userId);
     
-    // 4. Extraer los IDs de los eventos
+    // 4. Extraer solo los identificadores únicos de cada evento
     const eventIds = joinedEventRecords.map(record => record.eventId);
 
+    // Si no participa en nada, retornamos una lista vacía de inmediato
     if (eventIds.length === 0) {
       return NextResponse.json([]);
     }
 
-    // 5. Obtener los datos completos de las invitaciones
-    // Nota: Filtramos las que el usuario NO creó (aunque getJoinedEventsByUserId ya debería filtrar indirectamente
-    // si solo consideramos eventos donde se unió como invitado)
+    // 5. Consultar los detalles completos (título, fecha, etc.) de todos esos eventos en Firestore
     const invitations: Invitation[] = await InvitationRepository.getByIds(eventIds);
 
-    // 6. Retornar la lista
+    // 6. Retornar la colección de invitaciones al cliente
     return NextResponse.json(invitations);
   } catch (error: unknown) {
     console.error("Error fetching participating invitations:", error);

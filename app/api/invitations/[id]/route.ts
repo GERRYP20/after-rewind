@@ -19,6 +19,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    // Busca la invitación por ID en la base de datos
     const invitation = await InvitationRepository.getById(id);
     
     if (!invitation) {
@@ -27,6 +28,7 @@ export async function GET(
 
     // ─── UNIÓN DE DATOS: Obtener info del anfitrión desde Firebase Auth ──────────
     try {
+      // Intentamos enriquecer la invitación con los datos del perfil del creador
       const hostRecord = await adminAuth.getUser(invitation.createdBy);
       invitation.hostName = hostRecord.displayName || hostRecord.email?.split('@')[0] || "Anfitrión";
       invitation.hostPhoto = hostRecord.photoURL || undefined;
@@ -66,22 +68,22 @@ export async function PUT(
 
     const { id } = await params;
 
-    // 3. Obtener la invitación actual de la base de datos
+    // 3. Obtener la invitación actual de la base de datos para validar autoría
     const invitation = await InvitationRepository.getById(id);
 
     if (!invitation) {
       return NextResponse.json({ error: "Invitación no encontrada" }, { status: 404 });
     }
 
-    // 4. Verificar que el usuario actual sea el creador (autorización)
+    // 4. Verificar que el usuario actual sea el dueño del evento
     if (invitation.createdBy !== currentUserId) {
       return NextResponse.json({ error: "No tienes permiso para editar esta invitación" }, { status: 403 });
     }
 
-    // 5. Obtener los datos a actualizar del body
+    // 5. Obtener los nuevos datos del cuerpo de la petición
     const body = await request.json();
 
-    // 6. Actualizar la invitación en la base de datos
+    // 6. Aplicar la actualización en Firestore
     await InvitationRepository.update(id, body);
 
     return NextResponse.json({ message: "Invitación actualizada correctamente" });
@@ -114,14 +116,14 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // 3. Obtener la invitación actual de la base de datos
+    // 3. Obtener la invitación actual
     const invitation = await InvitationRepository.getById(id);
 
     if (!invitation) {
       return NextResponse.json({ error: "Invitación no encontrada" }, { status: 404 });
     }
 
-    // 4. Verificar que el usuario actual sea el creador (autorización)
+    // 4. Solo el creador original puede borrar el evento
     if (invitation.createdBy !== currentUserId) {
       return NextResponse.json({ error: "No tienes permiso para eliminar esta invitación" }, { status: 403 });
     }
@@ -130,20 +132,20 @@ export async function DELETE(
     try {
       console.log(`Iniciando limpieza total para el evento ${id}`);
 
-      // 1. Limpiar fotos (Cloudinary + Firestore)
+      // 1. Limpiar fotos (Cloudinary + Firestore) para no dejar archivos huérfanos
       const photos = await EventPhotoRepository.getByEventId(id).catch(() => []);
       for (const photo of photos) {
         if (photo.url) await deleteFromCloudinary(photo.url).catch(() => {});
         if (photo.id) await EventPhotoRepository.delete(photo.id).catch(() => {});
       }
 
-      // 2. Limpiar comentarios
+      // 2. Limpiar todos los comentarios del muro del evento
       const comments = await CommentRepository.getByEvent(id).catch(() => []);
       for (const comment of comments) {
         if (comment.id) await CommentRepository.delete(comment.id).catch(() => {});
       }
 
-      // 3. Limpiar registros de invitados
+      // 3. Eliminar los registros de asistencia de los invitados
       const guests = await EventGuestRepository.getByEventId(id).catch(() => []);
       for (const guest of guests) {
         // rejectGuest simplemente borra el documento sin afectar otros contadores
@@ -155,7 +157,7 @@ export async function DELETE(
     }
     // ──────────────────────────────────────────────────────────────────────────
 
-    // 5. Eliminar la invitación de la base de datos
+    // 5. Finalmente eliminar el documento de la invitación
     await InvitationRepository.delete(id);
 
     return NextResponse.json({ message: "Invitación eliminada correctamente" });

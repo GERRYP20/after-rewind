@@ -3,12 +3,12 @@
  * Almacena la información del comentario incluyendo el autor.
  */
 export interface Comment {
-  id: string;                      // ID único del comentario en Firestore
-  eventId: string;                 // ID del evento al que pertenece el comentario
-  userId: string;                  // ID del usuario que escribió el comentario
-  userName: string;                // Nombre del usuario que escreveu el comentario
-  userPhoto?: string;              // URL de la foto de perfil del usuario
-  text: string;                   // Contenido del comentario
-  createdAt?: string;             // Fecha de creación en formato ISO (opcional)
-  isOwner?: boolean;              // Indica si el usuario actual es el autor del comentario
+  id: string;                      // ID único del comentario
+  eventId: string;                 // Evento al que pertenece
+  userId: string;                  // Autor del comentario
+  userName: string;                // Nombre visible del autor
+  userPhoto?: string;              // Foto de perfil (opcional)
+  text: string;                   // El mensaje en sí
+  createdAt?: string;             // Cuándo se escribió
+  isOwner?: boolean;              // ¿Es el comentario del usuario actual?
 }

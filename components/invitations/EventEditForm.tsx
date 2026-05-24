@@ -10,7 +10,7 @@ interface EventEditFormProps {
   onCancel: () => void;
 }
 
-// Categorías disponibles para el evento
+// Categorías disponibles para clasificar el evento
 const CATEGORIAS = [
   { key: "boda", label: "Boda", icon: "💍" },
   { key: "cumpleaños", label: "Cumpleaños", icon: "🎂" },
@@ -22,12 +22,12 @@ const CATEGORIAS = [
 ];
 
 export default function EventEditForm({ event, onSave, onCancel }: EventEditFormProps) {
-  // Estado para indicar si hay una operación en progreso
+  // Estados para manejar la carga de datos y archivos
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Estado para el formulario
+  // Estado que agrupa todos los campos del formulario
   const [formData, setFormData] = useState({
     title: event.title || "",
     date: event.date ? event.date.split("T")[0] : "",
@@ -38,6 +38,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
     imageUrl: event.imageUrl || "",
   });
 
+  // Gestiona la subida de la imagen a Cloudinary/API
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -72,7 +73,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
     }
   };
 
-  // Función para guardar los cambios
+  // Valida y envía los datos actualizados del evento
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -92,7 +93,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
     }
   };
 
-  // Estilos reutilizables
+  // Estilos base para inputs y etiquetas
   const inputStyle: React.CSSProperties = {
     width: "100%",
     backgroundColor: "#09090b",
@@ -124,7 +125,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
       borderRadius: "20px",
       overflow: "hidden",
     }}>
-      {/* Banner decorativo */}
+      {/* Línea decorativa superior con degradado dorado */}
       <div style={{
         height: "8px",
         background: "linear-gradient(90deg, #92400e, #E0B046, #fcd34d, #E0B046, #92400e)",
@@ -132,7 +133,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
       }} />
 
       <form onSubmit={handleSubmit}>
-        {/* PORTADA - Ahora es lo más importante arriba (estilo similar al creador) */}
+        {/* Sección de portada del evento */}
         <div style={{ height: "300px", position: "relative", backgroundColor: "#09090b", borderBottom: "1px solid #3f3f46" }}>
           {formData.imageUrl ? (
             <Image 
@@ -148,6 +149,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
               <p style={{ fontWeight: 800, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Sin foto de portada</p>
             </div>
           )}
+          {/* Spinner de carga durante la subida de imagen */}
           {uploading && (
             <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.8)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#E0B046", zIndex: 30 }}>
               <span style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #E0B046", borderTopColor: "transparent", animation: "spin 0.7s linear infinite", marginBottom: "12px" }} />
@@ -157,7 +159,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
         </div>
 
         <div style={{ padding: "36px" }}>
-          {/* BOTONES DE ACCIÓN - Justo debajo de la foto */}
+          {/* Botones para gestionar la imagen de portada */}
           <div style={{ display: "flex", gap: "12px", marginBottom: "32px" }}>
             <button
               type="button"
@@ -215,7 +217,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
             onChange={handleImageChange}
           />
 
-          {/* Título de la sección */}
+          {/* Encabezado del formulario */}
           <div style={{ textAlign: "center", marginBottom: "28px" }}>
             <h2 style={{ color: "white", fontSize: "24px", fontWeight: 900, margin: "0 0 8px 0" }}>
               Editar <span style={{ color: "#E0B046" }}>Evento</span>
@@ -225,7 +227,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
             </p>
           </div>
 
-          {/* Selector de categoría */}
+          {/* Selector de categoría visual */}
           <div style={{ marginBottom: "28px" }}>
             <p style={labelStyle}>Tipo de evento</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "10px" }}>
@@ -259,9 +261,9 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
             </div>
           </div>
 
-          {/* Campos del formulario */}
+          {/* Bloque de inputs del formulario */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {/* Nombre del evento */}
+            {/* Campo: Título del evento */}
             <div>
               <label style={labelStyle}>Nombre del evento</label>
               <input
@@ -275,12 +277,13 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
               />
             </div>
 
-            {/* Fecha y ubicación */}
+            {/* Grid para Fecha y Ubicación */}
             <div style={{ 
               display: "grid", 
               gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
               gap: "16px" 
             }}>
+              {/* Campo: Fecha */}
               <div>
                 <label style={labelStyle}>Fecha del evento</label>
                 <input
@@ -293,6 +296,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
                   required
                 />
               </div>
+              {/* Campo: Ubicación */}
               <div>
                 <label style={labelStyle}>Ubicación</label>
                 <input
@@ -307,6 +311,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
               </div>
             </div>
 
+            {/* Campo: URL de ubicación (opcional) */}
             <div>
               <label style={labelStyle}>Link del mapa <span style={{ color: "#52525b", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></label>
               <input
@@ -319,7 +324,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
               />
             </div>
 
-            {/* Descripción */}
+            {/* Campo: Descripción del evento */}
             <div>
               <label style={labelStyle}>
                 Descripción <span style={{ color: "#52525b", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span>
@@ -335,9 +340,9 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
             </div>
           </div>
 
-          {/* Botones de acción */}
+          {/* Botones de acción final: Cancelar y Guardar */}
           <div style={{ display: "flex", gap: "12px", marginTop: "28px" }}>
-            {/* Cancelar */}
+            {/* Botón para abortar la edición */}
             <button
               type="button"
               onClick={onCancel}
@@ -360,7 +365,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
               Cancelar
             </button>
 
-            {/* Guardar cambios */}
+            {/* Botón principal para confirmar cambios */}
             <button
               type="submit"
               disabled={loading || uploading || !formData.title || !formData.date || !formData.location}

@@ -25,23 +25,23 @@ export async function DELETE() {
       return NextResponse.json({ error: "No hay sesión activa" }, { status: 401 });
     }
 
-    // 1. Verificar la sesión y obtener el ID del usuario
+    // 1. Identificar al usuario que solicita el borrado total de su cuenta
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const userId = decodedToken.uid;
 
     console.log(`Iniciando borrado en cascada para el usuario: ${userId}`);
 
-    // --- FASE A: Borrar eventos creados por el usuario y sus datos asociados ---
+    // --- FASE A: Borrar eventos creados por el usuario y todos sus datos dependientes ---
     let userEvents: Invitation[] = [];
     try {
       console.log(`Buscando eventos creados por el usuario ${userId}...`);
-      // Intentamos con el query ordenado (requiere índice)
+      // Intentamos obtener la lista de eventos propiedad del usuario
       userEvents = await InvitationRepository.getByUser(userId);
     } catch (e) {
       console.error("Error al obtener eventos del usuario (posible falta de índice):", e);
       try {
         console.log("Reintentando búsqueda de eventos sin ordenamiento...");
-        // Fallback: búsqueda simple sin orderBy por si no hay índice
+        // Fallback: búsqueda simplificada en caso de que Firestore no tenga los índices listos
         const snapshot = await db.collection("invitations")
           .where("createdBy", "==", userId)
           .get();
@@ -63,31 +63,30 @@ export async function DELETE() {
       console.log(`Eliminando datos del evento: ${eventId}`);
       
       try {
-        // Borrar todas las fotos del evento
+        // Borrado integral del evento: Fotos, Comentarios e Invitados
         const photos = await EventPhotoRepository.getByEventId(eventId).catch(() => []);
         console.log(`- Borrando ${photos.length} fotos del evento ${eventId}`);
         for (const photo of photos) {
           if (photo.id) {
+            // Borramos el archivo en Cloudinary y luego el registro en Firestore
             if (photo.url) await deleteFromCloudinary(photo.url).catch(err => console.error(`  Error físico Cloudinary ${photo.id}:`, err));
             await EventPhotoRepository.delete(photo.id).catch(err => console.error(`  Error borrando foto ${photo.id}:`, err));
           }
         }
 
-        // Borrar todos los comentarios del evento
         const comments = await CommentRepository.getByEvent(eventId).catch(() => []);
         console.log(`- Borrando ${comments.length} comentarios del evento ${eventId}`);
         for (const comment of comments) {
           if (comment.id) await CommentRepository.delete(comment.id).catch(err => console.error(`  Error borrando comentario ${comment.id}:`, err));
         }
 
-        // Borrar todos los registros de invitados del evento
         const guests = await EventGuestRepository.getByEventId(eventId).catch(() => []);
         console.log(`- Borrando ${guests.length} invitados del evento ${eventId}`);
         for (const guest of guests) {
           if (guest.id) await EventGuestRepository.rejectGuest(guest.id).catch(err => console.error(`  Error rechazando invitado ${guest.id}:`, err));
         }
 
-        // Finalmente, borrar el evento
+        // Eliminamos el documento principal de la invitación
         console.log(`- Eliminando documento principal del evento ${eventId}`);
         await InvitationRepository.delete(eventId);
         console.log(`- Evento ${eventId} eliminado con éxito.`);
@@ -96,11 +95,11 @@ export async function DELETE() {
       }
     }
 
-    // --- FASE B: Borrar huella del usuario en eventos ajenos ---
+    // --- FASE B: Limpiar la participación del usuario en eventos de terceros ---
     console.log("Limpiando huella del usuario en otros eventos...");
     
     try {
-      // 1. Borrar fotos subidas por el usuario en otros eventos
+      // 1. Borrar fotos subidas por el usuario en galerías ajenas
       const userPhotos = await EventPhotoRepository.getByUserId(userId);
       for (const photo of userPhotos) {
         if (photo.id) await EventPhotoRepository.delete(photo.id).catch(err => console.error(`Error borrando foto ajena ${photo.id}:`, err));
@@ -108,7 +107,7 @@ export async function DELETE() {
     } catch (e) { console.error("Error en limpieza de fotos ajenas:", e); }
 
     try {
-      // 2. Borrar comentarios escritos por el usuario en otros eventos
+      // 2. Borrar comentarios escritos por el usuario en muros ajenos
       const userComments = await CommentRepository.getByUserId(userId);
       for (const comment of userComments) {
         if (comment.id) await CommentRepository.delete(comment.id).catch(err => console.error(`Error borrando comentario ajeno ${comment.id}:`, err));
@@ -116,32 +115,33 @@ export async function DELETE() {
     } catch (e) { console.error("Error en limpieza de comentarios ajenos:", e); }
 
     try {
-      // 3. Borrar registros de asistencia y actualizar contadores
+      // 3. Dar de baja su asistencia en otros eventos y actualizar contadores de invitados
       const userGuestRecords = await EventGuestRepository.getByUserId(userId);
       for (const record of userGuestRecords) {
         if (record.id) {
           await EventGuestRepository.removeGuest(record.id, record.eventId).catch(err => {
             console.error(`Error quitando invitado de evento ajeno ${record.id}:`, err);
-            // Si falla la transacción (ej: evento ya no existe), intentamos borrar el registro simple
+            // Si el evento ya no existe, simplemente borramos el registro huérfano
             if (record.id) return EventGuestRepository.rejectGuest(record.id);
           });
         }
       }
     } catch (e) { console.error("Error en limpieza de registros de invitado:", e); }
 
-    // --- FASE C: Borrar cuenta de Firebase Auth ---
+    // --- FASE C: Eliminar la cuenta de usuario de Firebase Authentication ---
     try {
       await adminAuth.deleteUser(userId);
       console.log(`Cuenta de Auth eliminada para el usuario: ${userId}`);
     } catch (e: unknown) {
       console.error("Error al borrar usuario de Firebase Auth:", e);
       const firebaseError = e as { code?: string };
+      // Si el usuario ya fue borrado de Auth (o no se encuentra), ignoramos el error
       if (firebaseError.code !== 'auth/user-not-found') {
-        throw e; // Si es un error distinto a que ya no existe, lanzamos para informar al frontend
+        throw e;
       }
     }
 
-    // --- FASE D: Limpiar cookies y responder ---
+    // --- FASE D: Cerrar sesión en el servidor y limpiar cookies ---
     const response = NextResponse.json({ 
       success: true, 
       message: "Cuenta y datos eliminados correctamente" 

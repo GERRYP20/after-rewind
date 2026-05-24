@@ -23,16 +23,20 @@ const mapEventPhoto = (doc: DocumentSnapshot | QueryDocumentSnapshot): EventPhot
 };
 
 export const EventPhotoRepository = {
-  // Guarda un nuevo registro de foto en la base de datos
+  /**
+   * Guarda un nuevo registro de foto
+   */
   async create(data: CreateEventPhotoData): Promise<string> {
     const docRef = await db.collection(COLLECTION_NAME).add({
       ...data,
-      createdAt: new Date(), // Fecha de subida automática
+      createdAt: new Date(),
     });
     return docRef.id;
   },
 
-  // Trae todas las fotos de un evento específico, ordenadas de la más nueva a la más vieja
+  /**
+   * Obtiene la galería de fotos de un evento, ordenadas por fecha
+   */
   async getByEventId(eventId: string): Promise<EventPhoto[]> {
     try {
       const snapshot = await db
@@ -44,14 +48,13 @@ export const EventPhotoRepository = {
       return snapshot.docs.map(mapEventPhoto);
     } catch (error) {
       console.error("Error en getByEventId de fotos (posible falta de índice):", error);
-      // Fallback: traer sin ordenar
+      // Fallback si falla el ordenamiento por falta de índice
       const snapshot = await db
         .collection(COLLECTION_NAME)
         .where("eventId", "==", eventId)
         .get();
       
       const photos = snapshot.docs.map(mapEventPhoto);
-      // Ordenar manualmente en memoria
       return photos.sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -60,7 +63,9 @@ export const EventPhotoRepository = {
     }
   },
 
-  // Trae todas las fotos subidas por un usuario específico
+  /**
+   * Lista todas las fotos subidas por un usuario
+   */
   async getByUserId(userId: string): Promise<EventPhoto[]> {
     const snapshot = await db
       .collection(COLLECTION_NAME)
@@ -70,12 +75,16 @@ export const EventPhotoRepository = {
     return snapshot.docs.map(mapEventPhoto);
   },
 
-  // Borra una foto (por ejemplo si el administrador decide eliminarla)
+  /**
+   * Elimina el registro de una foto
+   */
   async delete(photoId: string): Promise<void> {
     await db.collection(COLLECTION_NAME).doc(photoId).delete();
   },
 
-  // Obtiene una foto por su ID (útil para validaciones)
+  /**
+   * Busca una foto específica por su ID
+   */
   async getById(photoId: string): Promise<EventPhoto | null> {
     const doc = await db.collection(COLLECTION_NAME).doc(photoId).get();
     if (!doc.exists) return null;

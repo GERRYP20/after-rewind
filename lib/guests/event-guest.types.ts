@@ -8,22 +8,13 @@
  * Se almacena en la colección 'event_guests' de Firestore
  */
 export interface EventGuest {
-  // ID único del documento en Firestore (generado automáticamente)
-  id?: string;
-  // ID del evento al que pertenece el invitado (referencia a 'invitations')
-  eventId: string;
-  // ID del usuario en Firebase Auth que se unió al evento
-  userId: string;
-  // Nombre del usuario (obtenido del token de sesión)
-  userName: string;
-  // URL de la foto de perfil (obtenida del token de sesión)
-  userPhoto?: string;
-  // Estado de la solicitud del invitado
-  // 'pending' = esperando aprobación del creador (para eventos privados)
-  // 'confirmed' = confirmado y contando en guestCount
-  status: 'pending' | 'confirmed';
-  // Fecha en que el usuario se unió al evento (formato ISO)
-  createdAt: string;
+  id?: string;             // ID del registro en Firestore
+  eventId: string;         // Evento al que se une
+  userId: string;          // Usuario que se une
+  userName: string;        // Nombre del usuario
+  userPhoto?: string;      // Foto del usuario
+  status: 'pending' | 'confirmed'; // Estado de la solicitud
+  createdAt: string;       // Fecha de unión
 }
 
 /**

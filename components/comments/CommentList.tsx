@@ -120,6 +120,9 @@ function DeleteConfirmModal({ isOpen, onConfirm, onCancel, userName }: DeleteCon
   );
 }
 
+/**
+ * Propiedades del listado de comentarios
+ */
 interface CommentListProps {
   comments: Comment[];
   onEdit: (commentId: string, newText: string) => Promise<void>;

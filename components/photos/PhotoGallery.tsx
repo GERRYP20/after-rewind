@@ -12,10 +12,12 @@ interface PhotoGalleryProps {
 }
 
 export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDeleteSuccess }: PhotoGalleryProps) {
-  // Estado para la foto que se está viendo en pantalla completa
+  // Estado para la foto que se está viendo en pantalla completa (lightbox)
   const [selectedPhoto, setSelectedPhoto] = useState<EventPhoto | null>(null);
+  // Estado para el ID de la foto que se está eliminando actualmente
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Maneja la eliminación de una foto tras confirmación
   const handleDelete = async (e: React.MouseEvent, photo: EventPhoto) => {
     e.stopPropagation(); // Evitamos que se abra el modal al hacer clic en borrar
     
@@ -42,6 +44,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
     }
   };
 
+  // Renderizado en caso de que no existan fotos
   if (photos.length === 0) {
     return (
       <div style={{
@@ -60,13 +63,14 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
 
   return (
     <>
-      {/* GRID DE FOTOS */}
+      {/* Grilla principal de fotos con diseño responsivo */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
         gap: "12px",
       }}>
         {photos.map((photo) => {
+          // Determina si el usuario tiene permiso para borrar esta foto
           const canDelete = isEventOwner || (currentUserId && photo.userId === currentUserId);
           
           return (
@@ -86,6 +90,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
               onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
               onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
             >
+              {/* Imagen de la miniatura */}
               <Image
                 src={photo.url}
                 alt={`Foto por ${photo.userName}`}
@@ -94,7 +99,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
                 sizes="(max-width: 768px) 33vw, 20vw"
               />
 
-              {/* Botón de borrar (solo si tiene permiso) */}
+              {/* Botón flotante para eliminar la foto */}
               {canDelete && (
                 <button
                   onClick={(e) => handleDelete(e, photo)}
@@ -124,7 +129,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
                 </button>
               )}
 
-              {/* Overlay sutil con el nombre de quien subió */}
+              {/* Pie de foto con el nombre del autor */}
               <div style={{
                 position: "absolute",
                 bottom: 0,
@@ -148,7 +153,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
         })}
       </div>
 
-      {/* MODAL / LIGHTBOX (Para ver la foto en grande) */}
+      {/* Modal / Lightbox para ver la imagen en alta resolución */}
       {selectedPhoto && (
         <div 
           onClick={() => setSelectedPhoto(null)}
@@ -165,8 +170,9 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
             cursor: "zoom-out"
           }}
         >
-          {/* Botones del Modal */}
+          {/* Controles del lightbox */}
           <div style={{ position: "absolute", top: "20px", right: "20px", display: "flex", gap: "20px", alignItems: "center" }}>
+            {/* Botón eliminar dentro del lightbox */}
             {(isEventOwner || (currentUserId && selectedPhoto.userId === currentUserId)) && (
               <button
                 onClick={(e) => handleDelete(e, selectedPhoto)}
@@ -184,6 +190,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
                 Eliminar Foto
               </button>
             )}
+            {/* Botón para cerrar el lightbox */}
             <button 
               onClick={() => setSelectedPhoto(null)}
               style={{
@@ -196,6 +203,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
             >✕</button>
           </div>
 
+          {/* Contenedor de la imagen expandida */}
           <div 
             onClick={e => e.stopPropagation()}
             style={{
@@ -215,6 +223,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
             />
           </div>
 
+          {/* Información detallada de la foto seleccionada */}
           <div style={{ marginTop: "20px", textAlign: "center" }}>
             <p style={{ color: "white", fontWeight: 900, fontSize: "16px", margin: "0 0 4px 0" }}>
               Subida por {selectedPhoto.userName}

@@ -9,9 +9,11 @@ interface CommentFormProps {
 }
 
 export default function CommentForm({ eventId, onCommentAdded }: CommentFormProps) {
+  // Estado para el texto del comentario y el indicador de carga
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Maneja el envío del formulario al servidor
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!text.trim() || loading) return;
@@ -51,6 +53,7 @@ export default function CommentForm({ eventId, onCommentAdded }: CommentFormProp
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {/* Área de texto para escribir el comentario */}
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -73,6 +76,7 @@ export default function CommentForm({ eventId, onCommentAdded }: CommentFormProp
           onFocus={(e) => (e.target.style.borderColor = "#E0B046")}
           onBlur={(e) => (e.target.style.borderColor = "#3f3f46")}
         />
+        {/* Botón para enviar el comentario */}
         <button
           type="submit"
           disabled={!text.trim() || loading}

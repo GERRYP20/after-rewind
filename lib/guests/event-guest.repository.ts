@@ -33,14 +33,11 @@ const mapEventGuest = (doc: DocumentSnapshot | QueryDocumentSnapshot): EventGues
 };
 
 /**
- * Repository de invitados que maneja todas las operaciones CRUD
- * en la colección de event_guests de Firestore
+ * Repositorio para gestionar los invitados de eventos
  */
 export const EventGuestRepository = {
   /**
-   * Crea un nuevo invitado en la base de datos
-   * @param data - Datos del invitado sin incluir el id
-   * @returns El ID del documento creado
+   * Registra un nuevo invitado
    */
   async create(data: CreateEventGuestData): Promise<string> {
     const docRef = await db.collection(COLLECTION_NAME).add({
@@ -51,9 +48,7 @@ export const EventGuestRepository = {
   },
 
   /**
-   * Obtiene todos los invitados de un evento específico
-   * @param eventId - ID del evento
-   * @returns Lista de invitados del evento
+   * Obtiene todos los invitados de un evento
    */
   async getByEventId(eventId: string): Promise<EventGuest[]> {
     try {
@@ -66,14 +61,13 @@ export const EventGuestRepository = {
       return snapshot.docs.map(mapEventGuest);
     } catch (error) {
       console.error("Error en getByEventId (posible falta de índice):", error);
-      // Fallback: traer sin ordenar si falla el índice
+      // Fallback si el índice de Firestore no está listo
       const snapshot = await db
         .collection(COLLECTION_NAME)
         .where("eventId", "==", eventId)
         .get();
       
       const guests = snapshot.docs.map(mapEventGuest);
-      // Ordenar manualmente en memoria
       return guests.sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -83,9 +77,7 @@ export const EventGuestRepository = {
   },
 
   /**
-   * Obtiene todos los registros de invitado de un usuario específico (independiente del estado)
-   * @param userId - ID del usuario
-   * @returns Lista de registros de invitado
+   * Trae los registros de invitado de un usuario
    */
   async getByUserId(userId: string): Promise<EventGuest[]> {
     const snapshot = await db
@@ -97,10 +89,7 @@ export const EventGuestRepository = {
   },
 
   /**
-   * Obtiene los invitados de un evento filtrados por estado
-   * @param eventId - ID del evento
-   * @param status - Estado por el cual filtrar ('pending' | 'confirmed')
-   * @returns Lista de invitados con el estado especificado
+   * Filtra invitados por estado (pendiente o confirmado)
    */
   async getByEventIdAndStatus(eventId: string, status: 'pending' | 'confirmed'): Promise<EventGuest[]> {
     const snapshot = await db
@@ -111,19 +100,16 @@ export const EventGuestRepository = {
 
     const guests = snapshot.docs.map(mapEventGuest);
     
-    // Ordenar en memoria para evitar el error de índice de Firestore hasta que el usuario lo cree
+    // Ordenamos en memoria para no depender de índices compuestos inmediatos
     return guests.sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
-      return dateB - dateA; // Descendente
+      return dateB - dateA;
     });
   },
 
   /**
-   * Verifica si un usuario ya está registrado como invitado en un evento
-   * @param eventId - ID del evento
-   * @param userId - ID del usuario
-   * @returns El invitados si existe, null si no existe
+   * Verifica si un usuario ya solicitó unirse a un evento
    */
   async getByEventIdAndUserId(eventId: string, userId: string): Promise<EventGuest | null> {
     const snapshot = await db
@@ -139,9 +125,7 @@ export const EventGuestRepository = {
   },
 
   /**
-   * Obtiene un invitado específico por su ID
-   * @param guestId - ID del invitado
-   * @returns El invitados encontrado o null si no existe
+   * Busca un invitado por ID
    */
   async getById(guestId: string): Promise<EventGuest | null> {
     const doc = await db.collection(COLLECTION_NAME).doc(guestId).get();
@@ -150,14 +134,10 @@ export const EventGuestRepository = {
   },
 
   /**
-   * Aprueba un invitado (cambia status a 'confirmed' e incrementa guestCount)
-   * Usa una transacción para mantener la consistencia
-   * @param guestId - ID del documento del invitado
-   * @param eventId - ID del evento
+   * Aprueba la solicitud y actualiza el contador del evento (transaccional)
    */
   async approveGuest(guestId: string, eventId: string): Promise<void> {
     await db.runTransaction(async (transaction) => {
-      // 1. Actualizar el estado del invitado a 'confirmed'
       const guestRef = db.collection(COLLECTION_NAME).doc(guestId);
       const guestDoc = await guestRef.get();
       
@@ -165,9 +145,9 @@ export const EventGuestRepository = {
         throw new Error("El invitado no existe");
       }
 
+      // Cambiamos el estado a confirmado
       transaction.update(guestRef, { status: "confirmed" });
 
-      // 2. Incrementar el guestCount del evento
       const eventRef = db.collection("invitations").doc(eventId);
       const eventDoc = await eventRef.get();
       
@@ -175,29 +155,24 @@ export const EventGuestRepository = {
         throw new Error("El evento no existe");
       }
 
+      // Incrementamos el total de invitados en el evento
       const currentCount = eventDoc.data()?.guestCount || 0;
       transaction.update(eventRef, { guestCount: currentCount + 1 });
     });
   },
 
   /**
-   * Rechaza un invitado (elimina el documento del invitado)
-   * No modifica el guestCount ya que nunca fue confirmado
-   * @param guestId - ID del documento del invitado a eliminar
+   * Rechaza una solicitud eliminando el registro
    */
   async rejectGuest(guestId: string): Promise<void> {
     await db.collection(COLLECTION_NAME).doc(guestId).delete();
   },
 
   /**
-   * Elimina un invitado y decrementa el guestCount si estaba confirmado
-   * Usa transacción para mantener consistencia
-   * @param guestId - ID del documento del invitado
-   * @param eventId - ID del evento
+   * Elimina a un invitado y ajusta el contador si ya estaba confirmado
    */
   async removeGuest(guestId: string, eventId: string): Promise<void> {
     await db.runTransaction(async (transaction) => {
-      // 1. Verificar que el invitado existe
       const guestRef = db.collection(COLLECTION_NAME).doc(guestId);
       const guestDoc = await guestRef.get();
       
@@ -208,10 +183,10 @@ export const EventGuestRepository = {
       const guestData = guestDoc.data();
       const wasConfirmed = guestData?.status === "confirmed";
 
-      // 2. Eliminar el documento del invitado
+      // Borramos el registro del invitado
       transaction.delete(guestRef);
 
-      // 3. Si estaba confirmado, decrementar el guestCount
+      // Si estaba confirmado, restamos uno al contador del evento
       if (wasConfirmed) {
         const eventRef = db.collection("invitations").doc(eventId);
         const eventDoc = await eventRef.get();
@@ -225,9 +200,7 @@ export const EventGuestRepository = {
   },
 
   /**
-   * Obtiene todos los eventos a los que un usuario se ha unido y ha sido confirmado
-   * @param userId - ID del usuario en Firebase Auth
-   * @returns Lista de registros de invitados confirmados
+   * Lista eventos donde el usuario ya fue aceptado
    */
   async getJoinedEventsByUserId(userId: string): Promise<EventGuest[]> {
     const snapshot = await db

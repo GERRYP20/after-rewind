@@ -19,18 +19,20 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
+    // Verificamos que se haya enviado un archivo en el FormData
     if (!file) {
       return NextResponse.json({ error: "No se proporcionó ningún archivo" }, { status: 400 });
     }
 
+    // Convertimos el archivo a buffer para procesarlo con el SDK de Cloudinary
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Subir a Cloudinary usando una promesa para manejar el stream
+    // Subimos la imagen a Cloudinary. Se usa una promesa para envolver el stream de subida.
     const result = await new Promise<UploadApiResponse>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
-          folder: "after-rewind", // Carpeta organizada para el proyecto
+          folder: "after-rewind", // Las imágenes se guardan en esta carpeta específica
           resource_type: "auto",
         },
         (error, result) => {
@@ -40,6 +42,7 @@ export async function POST(request: NextRequest) {
       ).end(buffer);
     });
 
+    // Retornamos la URL segura generada por Cloudinary
     return NextResponse.json({ 
       url: result.secure_url,
       public_id: result.public_id 
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    // 1. Verificar sesión
+    // 1. Verificar que el usuario tenga permiso para borrar archivos
     const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get(COOKIE_NAME)?.value;
@@ -72,13 +75,13 @@ export async function DELETE(request: NextRequest) {
 
     await adminAuth.verifySessionCookie(sessionCookie, false);
 
-    // 2. Obtener URL del body
+    // 2. Extraer la URL de la imagen a eliminar
     const { url } = await request.json();
     if (!url) {
       return NextResponse.json({ error: "URL no proporcionada" }, { status: 400 });
     }
 
-    // 3. Eliminar físicamente
+    // 3. Ejecutar el borrado físico en los servidores de Cloudinary
     const success = await deleteFromCloudinary(url);
 
     if (success) {

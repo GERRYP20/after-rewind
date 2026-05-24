@@ -21,23 +21,21 @@ if (!projectId || !clientEmail || !privateKeyFromEnv) {
   );
 }
 
-// Sanitización de la private key para manejar correctamente saltos de línea y comillas en .env
+// Sanitización de la private key para manejar correctamente saltos de línea en el entorno
 const privateKey = privateKeyFromEnv
-  .replace(/^["']|["']$/g, "")           // Elimina comillas al inicio o final
-  .replace(/\\n/g, "\n")                 // Convierte \n literal a saltos de línea reales
+  .replace(/^["']|["']$/g, "")           // Limpiamos comillas accidentales
+  .replace(/\\n/g, "\n")                 // Parseamos los saltos de línea literales
   .split("\n")
-  .filter(line => line.length > 0)        // Elimina líneas vacías accidentales
+  .filter(line => line.length > 0)        // Quitamos líneas vacías
   .join("\n");
 
-// Verificación del formato PEM para asegurar que la llave es válida para el SDK
+// Chequeo básico del formato PEM para la llave privada
 if (!privateKey.includes("-----BEGIN PRIVATE KEY-----")) {
   throw new Error("FIREBASE_PRIVATE_KEY es inválida: falta el encabezado PEM");
 }
 
 /**
- * Singleton pattern para inicializar la App de Firebase.
- * Next.js en desarrollo recarga archivos constantemente; getApps() evita 
- * intentar inicializar una app que ya existe en memoria.
+ * Singleton para inicializar Firebase Admin y evitar duplicados en desarrollo
  */
 export const adminApp = getApps().length
   ? getApps()[0]!
@@ -46,9 +44,7 @@ export const adminApp = getApps().length
     });
 
 /**
- * Exportamos los servicios principales para el backend de After-Rewind.
- * - adminAuth: Usado en API routes para verificar la cookie de sesión.
- * - db: Instancia de Firestore usada en los Repositories para persistencia.
+ * Exportamos los servicios principales para el backend
  */
 export const adminAuth = getAuth(adminApp);
 export const db = getFirestore(adminApp);

@@ -1,3 +1,4 @@
+// Página de inicio de sesión: autenticación de usuarios mediante Firebase y sesión server-side
 /**
  * Esta página implementa autenticación de dos fases con diseño Glassmorphism:
  * 1. Firebase SDK: Autenticación del usuario (email/password o Google)

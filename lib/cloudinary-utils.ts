@@ -14,8 +14,7 @@ cloudinary.config({
  */
 export function extractPublicId(url: string): string | null {
   try {
-    // Busca la parte de la URL después de /upload/ (ignorando la versión vXXXXX/)
-    // y antes de la extensión del archivo
+    // Regex para capturar el ID de la imagen ignorando la versión y extensión
     const regex = /\/upload\/(?:v\d+\/)?([^\.]+)/;
     const match = url.match(regex);
     
@@ -33,6 +32,7 @@ export function extractPublicId(url: string): string | null {
  * Elimina una imagen físicamente de Cloudinary a partir de su URL completa.
  */
 export async function deleteFromCloudinary(url: string): Promise<boolean> {
+  // Solo intentamos borrar si es una URL válida de Cloudinary
   if (!url || !url.includes("res.cloudinary.com")) return false;
 
   const publicId = extractPublicId(url);
@@ -42,6 +42,7 @@ export async function deleteFromCloudinary(url: string): Promise<boolean> {
   }
 
   try {
+    // Llamada a la API de Cloudinary para destruir el asset
     console.log(`Intentando eliminar de Cloudinary: ${publicId}`);
     const result = await cloudinary.uploader.destroy(publicId);
     return result.result === "ok";

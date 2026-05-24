@@ -1,3 +1,4 @@
+// Invitaciones aceptadas: lista de eventos externos en los que el usuario participa como invitado
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";

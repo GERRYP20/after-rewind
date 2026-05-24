@@ -6,17 +6,19 @@ const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    // Extraemos el ID Token enviado por el cliente (generado tras el login de Firebase)
     const { idToken } = await request.json();
     
-    // Configuramos la expiración (5 días)
+    // Definimos el tiempo de vida de la sesión (5 días)
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
     
-    // Creamos la cookie de sesión de Firebase
+    // Generamos la cookie de sesión oficial usando el SDK de Firebase Admin
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
     
     const cookieStore = await cookies();
     
-    // CRÍTICO: path: "/" permite que la cookie se envíe a /api/invitations
+    // Guardamos la cookie de sesión en el navegador
+    // El path "/" es vital para que la cookie esté disponible en todas las rutas de la API
     cookieStore.set(COOKIE_NAME, sessionCookie, {
       maxAge: expiresIn,
       httpOnly: true,

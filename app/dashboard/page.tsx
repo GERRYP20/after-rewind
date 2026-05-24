@@ -1,3 +1,4 @@
+// Dashboard del usuario: vista principal para gestionar eventos propios y buscar nuevos por código
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";

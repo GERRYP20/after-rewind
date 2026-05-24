@@ -28,17 +28,14 @@ const mapComment = (doc: DocumentSnapshot | QueryDocumentSnapshot): Comment => {
 };
 
 /**
- * Repositorio de comentarios que maneja todas las operaciones CRUD
- * en la colección de comentarios de Firestore.
+ * Repositorio para manejar la persistencia de comentarios en Firestore
  */
 export const CommentRepository = {
   /**
-   * Crea un nuevo comentario en la base de datos.
-   * @param data - Datos del comentario sin incluir el id
-   * @returns El ID del documento creado
+   * Guarda un comentario nuevo
    */
   async create(data: Omit<Comment, "id" | "isOwner">): Promise<string> {
-    // DEBUG: Verificar que data incluye userId antes de guardar en Firestore
+    // Registramos la creación en los logs para debugging
     console.log("DEBUG - Repository create receives data:", JSON.stringify(data));
     
     const docRef = await db.collection(COLLECTION_NAME).add({
@@ -46,14 +43,11 @@ export const CommentRepository = {
       createdAt: new Date(),
     });
     
-    console.log("DEBUG - Document created with ID:", docRef.id);
     return docRef.id;
   },
 
   /**
-   * Obtiene todos los comentarios de un evento específico.
-   * @param eventId - ID del evento
-   * @returns Lista de comentarios ordenados por fecha (más recientes primero)
+   * Obtiene los comentarios de un evento, con fallback si falla el índice
    */
   async getByEvent(eventId: string): Promise<Comment[]> {
     try {
@@ -66,14 +60,13 @@ export const CommentRepository = {
       return snapshot.docs.map(mapComment);
     } catch (error) {
       console.error("Error en getByEvent de comentarios (posible falta de índice):", error);
-      // Fallback: traer sin ordenar
+      // Si el índice no está listo, traemos todo y ordenamos en memoria
       const snapshot = await db
         .collection(COLLECTION_NAME)
         .where("eventId", "==", eventId)
         .get();
       
       const comments = snapshot.docs.map(mapComment);
-      // Ordenar manualmente en memoria
       return comments.sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -83,9 +76,7 @@ export const CommentRepository = {
   },
 
   /**
-   * Obtiene todos los comentarios escritos por un usuario específico.
-   * @param userId - ID del usuario
-   * @returns Lista de comentarios
+   * Recupera comentarios por autor
    */
   async getByUserId(userId: string): Promise<Comment[]> {
     const snapshot = await db
@@ -97,9 +88,7 @@ export const CommentRepository = {
   },
 
   /**
-   * Obtiene un comentario específico por su ID.
-   * @param commentId - ID del comentario
-   * @returns El comentario encontrado o null si no existe
+   * Busca un comentario por su ID único
    */
   async getById(commentId: string): Promise<Comment | null> {
     const doc = await db.collection(COLLECTION_NAME).doc(commentId).get();
@@ -108,20 +97,17 @@ export const CommentRepository = {
   },
 
   /**
-   * Actualiza el texto de un comentario existente.
-   * @param commentId - ID del comentario a actualizar
-   * @param text - Nuevo texto del comentario
+   * Modifica el contenido de un comentario
    */
   async update(commentId: string, text: string): Promise<void> {
     await db.collection(COLLECTION_NAME).doc(commentId).update({
       text,
-      updatedAt: new Date(), // Agrega marca de tiempo de actualización
+      updatedAt: new Date(),
     });
   },
 
   /**
-   * Elimina un comentario de la base de datos.
-   * @param commentId - ID del comentario a eliminar
+   * Elimina un comentario permanentemente
    */
   async delete(commentId: string): Promise<void> {
     await db.collection(COLLECTION_NAME).doc(commentId).delete();

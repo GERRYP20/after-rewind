@@ -1,3 +1,4 @@
+// Vista detallada de un evento: permite gestionar invitados, ver álbum de fotos y comentarios
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";

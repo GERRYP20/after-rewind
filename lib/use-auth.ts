@@ -17,11 +17,13 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Escucha cambios en el estado de autenticación (login/logout)
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
 
+    // Limpiamos la suscripción al desmontar el componente
     return () => unsubscribe();
   }, []);
 

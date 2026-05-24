@@ -33,17 +33,20 @@ const mapInvitation = (doc: DocumentSnapshot | QueryDocumentSnapshot): Invitatio
 // Acá centramos todas las operaciones posibles con las invitaciones
 export const InvitationRepository = {
   
-  // Método para guardar una nueva invitación
-  // Ahora el objeto 'data' debe incluir la propiedad 'imageUrl'
+  /**
+   * Crea una nueva invitación de evento
+   */
   async create(data: Omit<Invitation, "id">): Promise<string> {
     const docRef = await db.collection(COLLECTION_NAME).add({
       ...data,
-      createdAt: new Date(), // Firestore lo guarda como Timestamp
+      createdAt: new Date(),
     });
     return docRef.id;
   },
 
-  // Método para traer todas las invitaciones de un usuario
+  /**
+   * Recupera todos los eventos creados por un usuario
+   */
   async getByUser(userId: string): Promise<Invitation[]> {
     try {
       const snapshot = await db
@@ -55,14 +58,13 @@ export const InvitationRepository = {
       return snapshot.docs.map(mapInvitation);
     } catch (error) {
       console.error("Error en getByUser (posible falta de índice):", error);
-      // Fallback: traer sin ordenar si falla el índice
+      // Fallback si no hay índice para ordenar por fecha
       const snapshot = await db
         .collection(COLLECTION_NAME)
         .where("createdBy", "==", userId)
         .get();
       
       const invitations = snapshot.docs.map(mapInvitation);
-      // Ordenar manualmente en memoria como plan B
       return invitations.sort((a, b) => {
         const dateA = a.date ? new Date(a.date).getTime() : 0;
         const dateB = b.date ? new Date(b.date).getTime() : 0;
@@ -72,9 +74,7 @@ export const InvitationRepository = {
   },
 
   /**
-   * Cuenta cuántos eventos ha creado un usuario
-   * @param userId - ID del usuario
-   * @returns Número de eventos
+   * Cuenta cuántos eventos tiene un usuario
    */
   async countByUser(userId: string): Promise<number> {
     const snapshot = await db
@@ -86,7 +86,9 @@ export const InvitationRepository = {
     return snapshot.data().count;
   },
 
-  // Método para obtener una invitación por su código de acceso único
+  /**
+   * Busca un evento por su código alfanumérico
+   */
   async getByCode(code: string): Promise<Invitation | null> {
     const snapshot = await db
       .collection(COLLECTION_NAME)
@@ -99,7 +101,9 @@ export const InvitationRepository = {
     return mapInvitation(snapshot.docs[0]);
   },
 
-  // Método para obtener una invitación por su ID (usado en la página de detalles)
+  /**
+   * Obtiene un evento por su ID de Firestore
+   */
   async getById(id: string): Promise<Invitation | null> {
     const doc = await db.collection(COLLECTION_NAME).doc(id).get();
     
@@ -108,12 +112,12 @@ export const InvitationRepository = {
     return mapInvitation(doc);
   },
 
-  // Método para obtener varias invitaciones por sus IDs
+  /**
+   * Trae múltiples eventos por sus IDs
+   */
   async getByIds(ids: string[]): Promise<Invitation[]> {
     if (ids.length === 0) return [];
 
-    // Firestore limit: 'in' queries can have up to 30 values
-    // If we have more, we would need to chunk them, but for now we'll assume a reasonable number
     const snapshots = await db
       .collection(COLLECTION_NAME)
       .where("__name__", "in", ids)
@@ -122,24 +126,26 @@ export const InvitationRepository = {
     return snapshots.docs.map(mapInvitation);
   },
 
-  // Método para actualizar una invitación existente
+  /**
+   * Actualiza los datos de un evento
+   */
   async update(id: string, data: Partial<Invitation>): Promise<void> {
     const updateData = { ...data };
     
-    // Eliminar campos que no deben actualizarse
+    // Limpiamos campos protegidos que no deben sobreescribirse
     delete updateData.id;
     delete updateData.createdAt;
     delete updateData.createdBy;
     delete updateData.accessCode;
     
-    // Agregar fecha de actualización
     updateData.updatedAt = new Date().toISOString();
     
     await db.collection(COLLECTION_NAME).doc(id).update(updateData);
   },
 
-  // Método para eliminar una invitación de Firestore
-  // @param id - ID del documento a eliminar
+  /**
+   * Borra un evento permanentemente
+   */
   async delete(id: string): Promise<void> {
     await db.collection(COLLECTION_NAME).doc(id).delete();
   },

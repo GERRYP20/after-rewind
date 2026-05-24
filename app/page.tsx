@@ -1,3 +1,4 @@
+// Página de inicio: punto de entrada público con información sobre la plataforma y secciones de marketing
 import React from "react";
 import Link from "next/link";
 import styles from "@/components/layout/PublicHeder.module.css";

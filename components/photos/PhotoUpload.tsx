@@ -8,13 +8,14 @@ interface PhotoUploadProps {
 }
 
 export default function PhotoUpload({ eventId, onUploadSuccess }: PhotoUploadProps) {
-  // Estado para saber si estamos subiendo archivos
+  // Estado para indicar si se están subiendo archivos en este momento
   const [uploading, setUploading] = useState(false);
-  // Para mostrar mensajes de progreso (ej: "Subiendo 2 de 5...")
+  // Estado para mostrar mensajes dinámicos sobre el progreso de la subida
   const [progressMsg, setProgressMsg] = useState("");
+  // Referencia al input de tipo file oculto
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Maneja la selección de múltiples archivos
+  // Maneja la selección de uno o varios archivos de imagen
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -23,13 +24,13 @@ export default function PhotoUpload({ eventId, onUploadSuccess }: PhotoUploadPro
     const totalFiles = files.length;
     let successCount = 0;
 
-    // Procesamos cada archivo uno por uno
+    // Procesamos la subida de cada archivo secuencialmente
     for (let i = 0; i < totalFiles; i++) {
       const file = files[i];
       setProgressMsg(`Subiendo ${i + 1} de ${totalFiles}...`);
 
       try {
-        // 1. Subir a Cloudinary usando tu API existente
+        // 1. Envía el archivo al endpoint de subida (Cloudinary)
         const uploadData = new FormData();
         uploadData.append("file", file);
 
@@ -41,7 +42,7 @@ export default function PhotoUpload({ eventId, onUploadSuccess }: PhotoUploadPro
         if (!cloudRes.ok) throw new Error("Error en Cloudinary");
         const cloudData = await cloudRes.json();
 
-        // 2. Registrar la URL en Firestore
+        // 2. Registra la URL obtenida en la base de datos del evento
         const dbRes = await fetch(`/api/invitations/${eventId}/photos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -59,10 +60,10 @@ export default function PhotoUpload({ eventId, onUploadSuccess }: PhotoUploadPro
     setUploading(false);
     setProgressMsg("");
     
-    // Limpiamos el input
+    // Resetea el input para permitir subir los mismos archivos si se desea
     if (fileInputRef.current) fileInputRef.current.value = "";
 
-    // Si al menos una se subió bien, refrescamos la galería
+    // Si hubo éxito, notifica al componente padre para actualizar la galería
     if (successCount > 0) {
       onUploadSuccess();
     } else {
@@ -72,7 +73,7 @@ export default function PhotoUpload({ eventId, onUploadSuccess }: PhotoUploadPro
 
   return (
     <div style={{ marginBottom: "24px" }}>
-      {/* Input oculto para abrir el selector de archivos */}
+      {/* Input de archivos oculto, controlado por el botón principal */}
       <input
         type="file"
         multiple
@@ -82,6 +83,7 @@ export default function PhotoUpload({ eventId, onUploadSuccess }: PhotoUploadPro
         style={{ display: "none" }}
       />
 
+      {/* Botón de acción principal con estados visuales de carga */}
       <button
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
@@ -118,6 +120,7 @@ export default function PhotoUpload({ eventId, onUploadSuccess }: PhotoUploadPro
       >
         {uploading ? (
           <>
+            {/* Spinner de carga y mensaje de progreso */}
             <span style={{ 
               width: "18px", height: "18px", 
               borderRadius: "50%", border: "2px solid #E0B046", 
@@ -134,6 +137,7 @@ export default function PhotoUpload({ eventId, onUploadSuccess }: PhotoUploadPro
         )}
       </button>
       
+      {/* Nota informativa para el usuario */}
       {!uploading && (
         <p style={{ color: "#52525b", fontSize: "11px", textAlign: "center", marginTop: "8px" }}>
           Puedes seleccionar varias imágenes a la vez

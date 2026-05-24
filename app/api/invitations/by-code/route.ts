@@ -20,7 +20,7 @@ const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    // Verifica que el usuario tenga una sesión activa
+    // 1. Validar que el usuario tenga una sesión activa en el servidor
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get(COOKIE_NAME)?.value;
 
@@ -28,33 +28,33 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "No hay sesión" }, { status: 401 });
     }
 
-    // Verifica la cookie de sesión
+    // 2. Verificar la integridad de la cookie con Firebase Admin
     await adminAuth.verifySessionCookie(sessionCookie, false);
 
-    // Obtiene el código de los parámetros de búsqueda
+    // 3. Obtener el código enviado por el usuario desde los parámetros de la URL
     const { searchParams } = new URL(request.url);
     let code = searchParams.get("code")?.trim().toUpperCase() || "";
 
-    // Validación: el código es requerido
+    // 4. El código es obligatorio para realizar la búsqueda
     if (!code) {
       return NextResponse.json({ error: "El código es requerido" }, { status: 400 });
     }
 
-    // Inteligencia de búsqueda: si el usuario ingresó 10 caracteres sin guión,
-    // lo convertimos al formato XXXXX-XXXXX para que coincida con lo guardado en DB
+    // 5. Normalización del código: si el usuario olvidó el guión intermedio,
+    // lo insertamos automáticamente para que coincida con el formato de la DB (XXXXX-XXXXX)
     if (code.length === 10 && !code.includes("-")) {
       code = `${code.substring(0, 5)}-${code.substring(5)}`;
     }
 
-    // Busca el evento en la base de datos usando el repositorio
+    // 6. Consultar en Firestore si existe un evento con este código exacto
     const invitation = await InvitationRepository.getByCode(code);
 
-    // Si no se encuentra el evento, retorna 404
+    // Si no hay resultados, informamos que el código no es válido
     if (!invitation) {
       return NextResponse.json({ error: "Código no encontrado" }, { status: 404 });
     }
 
-    // Retorna los datos del evento encontrado
+    // 7. Retornar los detalles básicos del evento encontrado
     return NextResponse.json(invitation);
   } catch (error: unknown) {
     console.error("Error buscando invitación por código:", error);

@@ -25,13 +25,13 @@ export async function PATCH(
       return NextResponse.json({ error: "No hay sesión" }, { status: 401 });
     }
 
-    // Decodifica el token para obtener el ID del usuario actual
+    // Identifica al usuario que intenta editar
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const currentUserId = decodedToken.uid;
 
     const { commentId } = await params;
 
-    // Obtiene el comentario de la base de datos
+    // Busca el comentario original para validar la autoría
     const comment = await CommentRepository.getById(commentId);
 
     // Verifica que el comentario exista
@@ -39,21 +39,21 @@ export async function PATCH(
       return NextResponse.json({ error: "Comentario no encontrado" }, { status: 404 });
     }
 
-    // Verifica que el usuario actual sea el autor del comentario (seguridad server-side)
+    // Bloquea la edición si el usuario no es quien escribió el comentario
     if (comment.userId !== currentUserId) {
       return NextResponse.json({ error: "No tienes permiso para editar este comentario" }, { status: 403 });
     }
 
-    // Obtiene el nuevo texto del body
+    // Extrae el nuevo contenido del comentario
     const body = await request.json();
     const { text } = body;
 
-    // Validación: el texto es requerido
+    // El comentario no puede estar vacío
     if (!text || text.trim().length === 0) {
       return NextResponse.json({ error: "El texto del comentario es requerido" }, { status: 400 });
     }
 
-    // Actualiza el comentario en la base de datos
+    // Guarda los cambios en la base de datos
     await CommentRepository.update(commentId, text.trim());
 
     return NextResponse.json({ message: "Comentario actualizado" });
@@ -74,7 +74,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; commentId: string }> }
 ): Promise<NextResponse> {
   try {
-    // Verifica la sesión del usuario
+    // Validación de sesión inicial
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get(COOKIE_NAME)?.value;
 
@@ -82,26 +82,26 @@ export async function DELETE(
       return NextResponse.json({ error: "No hay sesión" }, { status: 401 });
     }
 
-    // Decodifica el token para obtener el ID del usuario actual
+    // Obtiene el ID del usuario desde el token verificado
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const currentUserId = decodedToken.uid;
 
     const { commentId } = await params;
 
-    // Obtiene el comentario de la base de datos
+    // Recupera el comentario para verificar quién es el dueño
     const comment = await CommentRepository.getById(commentId);
 
-    // Verifica que el comentario exista
+    // Si no existe el comentario, no hay nada que borrar
     if (!comment) {
       return NextResponse.json({ error: "Comentario no encontrado" }, { status: 404 });
     }
 
-    // Verifica que el usuario actual sea el autor del comentario (seguridad server-side)
+    // Solo el autor tiene permitido borrar su propio comentario
     if (comment.userId !== currentUserId) {
       return NextResponse.json({ error: "No tienes permiso para eliminar este comentario" }, { status: 403 });
     }
 
-    // Elimina el comentario de la base de datos
+    // Ejecuta la eliminación en Firestore
     await CommentRepository.delete(commentId);
 
     return NextResponse.json({ message: "Comentario eliminado" });
