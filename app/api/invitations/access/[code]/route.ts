@@ -129,24 +129,27 @@ async function createConfirmedGuestWithTransaction(
   userPhoto: string | null
 ): Promise<void> {
   await db.runTransaction(async (transaction) => {
-    // 1. Crear el documento del invitado
+    // 1. Obtener el evento primero (LECTURA)
+    const eventRef = db.collection("invitations").doc(eventId);
+    const eventDoc = await transaction.get(eventRef);
+    
+    if (!eventDoc.exists) {
+      throw new Error("El evento no existe");
+    }
+
+    // 2. Crear el documento del invitado (ESCRITURA)
     const guestRef = db.collection("event_guests").doc();
     transaction.set(guestRef, {
       eventId,
       userId,
       userName,
-      userPhoto: userPhoto || null, // Aseguramos que sea null y no undefined
+      userPhoto: userPhoto || null,
       status: 'confirmed',
       createdAt: new Date(),
     });
 
-    // 2. Incrementar el guestCount del evento
-    const eventRef = db.collection("invitations").doc(eventId);
-    const eventDoc = await transaction.get(eventRef);
-    
-    if (eventDoc.exists) {
-      const currentCount = eventDoc.data()?.guestCount || 0;
-      transaction.update(eventRef, { guestCount: currentCount + 1 });
-    }
+    // 3. Incrementar el guestCount del evento (ESCRITURA)
+    const currentCount = eventDoc.data()?.guestCount || 0;
+    transaction.update(eventRef, { guestCount: currentCount + 1 });
   });
 }
