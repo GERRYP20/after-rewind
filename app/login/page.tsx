@@ -181,21 +181,30 @@ function LoginForm() {
                     placeholder="Ingresa tu contraseña"
                   />
 
-                  {/* Checkbox para recordar sesión */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="remember"
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
-                      className="rounded border-white/20 bg-white/5 text-amber-400 focus:ring-amber-400/50 focus:ring-offset-0"
-                    />
-                    <label
-                      htmlFor="remember"
-                      className="text-sm text-neutral-400"
+                  {/* Checkbox para recordar sesión y link de recuperación */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="remember"
+                        checked={remember}
+                        onChange={(e) => setRemember(e.target.checked)}
+                        className="rounded border-white/20 bg-white/5 text-amber-400 focus:ring-amber-400/50 focus:ring-offset-0"
+                      />
+                      <label
+                        htmlFor="remember"
+                        className="text-sm text-neutral-400"
+                      >
+                        Recordarme
+                      </label>
+                    </div>
+                    {/* Link de recuperación (placeholder sin funcionalidad) */}
+                    <Link
+                      href="#"
+                      className="text-xs text-amber-400/80 hover:text-amber-400 transition-colors"
                     >
-                      Recordarme
-                    </label>
+                      ¿Olvidaste tu contraseña?
+                    </Link>
                   </div>
 
                   {/* Sección: Mensaje de error */}

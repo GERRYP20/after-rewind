@@ -104,7 +104,7 @@ export default function SearchByCode() {
       </div>
 
       {/* Formulario de búsqueda */}
-      <form onSubmit={handleSearch} style={{ display: "flex", gap: "12px" }}>
+      <form onSubmit={handleSearch} style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
         {/* Campo de entrada para el código */}
         <input
           type="text"
@@ -114,7 +114,7 @@ export default function SearchByCode() {
           disabled={loading}
           maxLength={20}
           style={{
-            flex: 1,
+            flex: "1 1 200px",
             padding: "12px 16px",
             backgroundColor: "#09090b",
             border: `1px solid ${error ? "#f43f5e" : "#3f3f46"}`,
@@ -126,6 +126,7 @@ export default function SearchByCode() {
             letterSpacing: "0.1em",
             outline: "none",
             transition: "border-color 0.2s",
+            minWidth: "0", // Permite que flex-shrink funcione correctamente
           }}
           onFocus={(e) => {
             if (!error) e.target.style.borderColor = "#E0B046";
@@ -140,6 +141,8 @@ export default function SearchByCode() {
           type="submit"
           disabled={loading || !code.trim()}
           style={{
+            flex: "1 1 auto",
+            minWidth: "120px",
             padding: "12px 24px",
             borderRadius: "10px",
             backgroundColor: loading ? "#52525b" : "#E0B046",

@@ -1,9 +1,18 @@
+"use client";
+
 // Página de inicio: punto de entrada público con información sobre la plataforma y secciones de marketing
 import React from "react";
 import Link from "next/link";
 import styles from "@/components/layout/PublicHeder.module.css";
+import { useAuth } from "@/lib/use-auth";
 
 export default function Home() {
+  // Obtenemos el estado de autenticación para decidir a dónde enviar al usuario
+  const { user } = useAuth();
+
+  // Si hay usuario logeado lo mandamos al dashboard, si no, al login
+  const startLink = user ? "/dashboard" : "/login";
+
   return (
     <main className={styles.mainWrapper}>
       {/* 1. SECCIÓN HERO */}
@@ -18,7 +27,8 @@ export default function Home() {
             exclusivos y crear memorias visuales inolvidables.
           </p>
           <div className={styles.heroButtons}>
-            <Link href="#" className={styles.btnPrimary}>EMPEZAR AHORA</Link>
+            {/* Botón inteligente: cambia su destino según si el usuario inició sesión o no */}
+            <Link href={startLink} className={styles.btnPrimary}>EMPEZAR AHORA</Link>
             <Link href="#" className={styles.btnSecondary}>VER DEMO</Link>
           </div>
         </div>
@@ -33,7 +43,7 @@ export default function Home() {
             de cada detalle para que tu evento sea perfecto.
           </p>
         </div>
-        <div className={styles.stats}>
+        <div className={statsStyle}>
           <div className={styles.stat}>
             <div className={styles.statNum}>10k</div>
             <div className={styles.statLabel}>Eventos Organizados con nosotros</div>
@@ -89,3 +99,6 @@ export default function Home() {
     </main>
   );
 }
+
+// Estilo auxiliar para la sección de stats
+const statsStyle = styles.stats;
