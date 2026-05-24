@@ -16,14 +16,23 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
   const [selectedPhoto, setSelectedPhoto] = useState<EventPhoto | null>(null);
   // Estado para el ID de la foto que se está eliminando actualmente
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Estado para la foto que se desea eliminar (para mostrar el modal de confirmación)
+  const [photoToDelete, setPhotoToDelete] = useState<EventPhoto | null>(null);
 
-  // Maneja la eliminación de una foto tras confirmación
-  const handleDelete = async (e: React.MouseEvent, photo: EventPhoto) => {
+  // Maneja la apertura del modal de confirmación
+  const handleDelete = (e: React.MouseEvent, photo: EventPhoto) => {
     e.stopPropagation(); // Evitamos que se abra el modal al hacer clic en borrar
+    setPhotoToDelete(photo);
+  };
+
+  // Ejecuta la eliminación real de la foto tras confirmar en el modal
+  const confirmDelete = async () => {
+    if (!photoToDelete) return;
     
-    if (!confirm("¿Estás seguro de que quieres eliminar esta foto? Esta acción no se puede deshacer.")) return;
-    
+    const photo = photoToDelete;
     setDeletingId(photo.id || null);
+    setPhotoToDelete(null); // Cerramos el modal inmediatamente
+    
     try {
       const res = await fetch(`/api/invitations/${photo.eventId}/photos/${photo.id}`, {
         method: "DELETE",
@@ -34,11 +43,10 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
         if (selectedPhoto?.id === photo.id) setSelectedPhoto(null);
       } else {
         const data = await res.json();
-        alert(data.error || "Error al eliminar la foto");
+        console.error("Error al eliminar la foto:", data.error || "Error desconocido");
       }
     } catch (err) {
       console.error("Error deleting photo:", err);
-      alert("Error al intentar eliminar la foto");
     } finally {
       setDeletingId(null);
     }
@@ -95,7 +103,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
                 src={photo.url}
                 alt={`Foto por ${photo.userName}`}
                 fill
-                className="object-cover"
+                style={{ objectFit: "cover" }}
                 sizes="(max-width: 768px) 33vw, 20vw"
               />
 
@@ -218,7 +226,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
               src={selectedPhoto.url}
               alt="Vista completa"
               fill
-              className="object-contain"
+              style={{ objectFit: "contain" }}
               priority
             />
           </div>
@@ -231,6 +239,83 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
             <p style={{ color: "#71717a", fontSize: "12px" }}>
               {new Date(selectedPhoto.createdAt).toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" })}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación personalizado para eliminar */}
+      {photoToDelete && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0,0,0,0.8)",
+          backdropFilter: "blur(4px)",
+          zIndex: 3000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px"
+        }}>
+          <div style={{
+            backgroundColor: "#18181b",
+            border: "1px solid #27272a",
+            borderRadius: "20px",
+            padding: "24px",
+            maxWidth: "400px",
+            width: "100%",
+            textAlign: "center"
+          }}>
+            <div style={{
+              width: "60px",
+              height: "60px",
+              borderRadius: "30px",
+              backgroundColor: "rgba(244, 63, 94, 0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "24px",
+              margin: "0 auto 16px"
+            }}>🗑️</div>
+            
+            <h3 style={{ color: "white", fontSize: "18px", fontWeight: 800, margin: "0 0 8px 0" }}>
+              ¿Eliminar esta foto?
+            </h3>
+            <p style={{ color: "#a1a1aa", fontSize: "14px", margin: "0 0 24px 0" }}>
+              Esta acción no se puede deshacer y la foto desaparecerá del álbum para todos los invitados.
+            </p>
+            
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={() => setPhotoToDelete(null)}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "1px solid #27272a",
+                  backgroundColor: "transparent",
+                  color: "white",
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "none",
+                  backgroundColor: "#f43f5e",
+                  color: "white",
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
           </div>
         </div>
       )}
