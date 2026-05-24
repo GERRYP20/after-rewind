@@ -12,7 +12,7 @@ export interface EventGuest {
   eventId: string;         // Evento al que se une
   userId: string;          // Usuario que se une
   userName: string;        // Nombre del usuario
-  userPhoto?: string;      // Foto del usuario
+  userPhoto?: string | null; // Foto del usuario (permitimos null para Firestore)
   status: 'pending' | 'confirmed'; // Estado de la solicitud
   createdAt: string;       // Fecha de unión
 }

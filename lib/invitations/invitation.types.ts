@@ -18,5 +18,5 @@ export interface Invitation {
   visibility?: 'public' | 'private'; // ¿Cualquiera puede unirse o requiere aprobación?
   guestCount?: number;    // Total de confirmados
   hostName?: string;      // Nombre del anfitrión (para el UI)
-  hostPhoto?: string;     // Foto del anfitrión (para el UI)
+  hostPhoto?: string | null; // Foto del anfitrión (para el UI)
 }

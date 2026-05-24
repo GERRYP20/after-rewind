@@ -31,7 +31,7 @@ export async function GET(
       // Intentamos enriquecer la invitación con los datos del perfil del creador
       const hostRecord = await adminAuth.getUser(invitation.createdBy);
       invitation.hostName = hostRecord.displayName || hostRecord.email?.split('@')[0] || "Anfitrión";
-      invitation.hostPhoto = hostRecord.photoURL || undefined;
+      invitation.hostPhoto = hostRecord.photoURL || null;
     } catch (e) {
       console.error(`No se pudo obtener info del anfitrión ${invitation.createdBy}:`, e);
       invitation.hostName = "Anfitrión";
