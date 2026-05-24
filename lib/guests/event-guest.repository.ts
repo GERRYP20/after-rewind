@@ -152,24 +152,24 @@ export const EventGuestRepository = {
    */
   async approveGuest(guestId: string, eventId: string): Promise<void> {
     await db.runTransaction(async (transaction) => {
+      // 1. Obtener todas las referencias y documentos (LECTURAS)
       const guestRef = db.collection(COLLECTION_NAME).doc(guestId);
-      const guestDoc = await guestRef.get();
+      const guestDoc = await transaction.get(guestRef);
       
       if (!guestDoc.exists) {
         throw new Error("El invitado no existe");
       }
 
-      // Cambiamos el estado a confirmado
-      transaction.update(guestRef, { status: "confirmed" });
-
       const eventRef = db.collection("invitations").doc(eventId);
-      const eventDoc = await eventRef.get();
+      const eventDoc = await transaction.get(eventRef);
       
       if (!eventDoc.exists) {
         throw new Error("El evento no existe");
       }
 
-      // Incrementamos el total de invitados en el evento
+      // 2. Realizar todas las actualizaciones (ESCRITURAS)
+      transaction.update(guestRef, { status: "confirmed" });
+
       const currentCount = eventDoc.data()?.guestCount || 0;
       transaction.update(eventRef, { guestCount: currentCount + 1 });
     });
@@ -187,8 +187,9 @@ export const EventGuestRepository = {
    */
   async removeGuest(guestId: string, eventId: string): Promise<void> {
     await db.runTransaction(async (transaction) => {
+      // 1. Obtener referencias y documentos (LECTURAS)
       const guestRef = db.collection(COLLECTION_NAME).doc(guestId);
-      const guestDoc = await guestRef.get();
+      const guestDoc = await transaction.get(guestRef);
       
       if (!guestDoc.exists) {
         throw new Error("El invitado no existe");
@@ -197,18 +198,19 @@ export const EventGuestRepository = {
       const guestData = guestDoc.data();
       const wasConfirmed = guestData?.status === "confirmed";
 
-      // Borramos el registro del invitado
+      let eventDoc = null;
+      const eventRef = db.collection("invitations").doc(eventId);
+      
+      if (wasConfirmed) {
+        eventDoc = await transaction.get(eventRef);
+      }
+
+      // 2. Realizar eliminaciones y actualizaciones (ESCRITURAS)
       transaction.delete(guestRef);
 
-      // Si estaba confirmado, restamos uno al contador del evento
-      if (wasConfirmed) {
-        const eventRef = db.collection("invitations").doc(eventId);
-        const eventDoc = await eventRef.get();
-        
-        if (eventDoc.exists) {
-          const currentCount = eventDoc.data()?.guestCount || 0;
-          transaction.update(eventRef, { guestCount: Math.max(0, currentCount - 1) });
-        }
+      if (wasConfirmed && eventDoc && eventDoc.exists) {
+        const currentCount = eventDoc.data()?.guestCount || 0;
+        transaction.update(eventRef, { guestCount: Math.max(0, currentCount - 1) });
       }
     });
   },
