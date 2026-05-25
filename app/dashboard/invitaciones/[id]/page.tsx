@@ -13,7 +13,7 @@ import CommentList from "@/components/comments/CommentList";
 import EventEditForm from "@/components/invitations/EventEditForm";
 import PhotoUpload from "@/components/photos/PhotoUpload";
 import PhotoGallery from "@/components/photos/PhotoGallery";
-import { EventPhoto } from "@/lib/photos/event-photo.types";
+import { formatLongDate } from "@/lib/date-utils";
 
 // ─── Colores de portada por categoría (primera palabra del título) ────────────
 const COVER_STYLES: Record<string, string> = {
@@ -776,9 +776,7 @@ export default function DetalleEvento() {
               }}
             >
               <span style={{ fontSize: "22px" }}>📅</span>{" "}
-              {new Date(evento.date).toLocaleDateString("es-MX", {
-                dateStyle: "full",
-              })}
+              {formatLongDate(evento.date)}
             </span>
           </div>
         </div>

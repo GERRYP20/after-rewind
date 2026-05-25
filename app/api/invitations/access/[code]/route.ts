@@ -49,7 +49,7 @@ export async function POST(
 
     // Obtenemos el perfil actualizado del usuario desde Firebase
     const userRecord = await adminAuth.getUser(userId);
-    const userName = userRecord.displayName || decodedToken.name || "Usuario";
+    const userName = userRecord.displayName || decodedToken.name || userRecord.email?.split('@')[0] || "Usuario";
     const userPhoto = userRecord.photoURL || null;
 
     const { code } = await params;
