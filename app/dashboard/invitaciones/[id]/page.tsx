@@ -14,6 +14,7 @@ import EventEditForm from "@/components/invitations/EventEditForm";
 import PhotoUpload from "@/components/photos/PhotoUpload";
 import PhotoGallery from "@/components/photos/PhotoGallery";
 import { formatLongDate } from "@/lib/date-utils";
+import { EventPhoto } from "@/lib/photos/event-photo.types";
 
 // ─── Colores de portada por categoría (primera palabra del título) ────────────
 const COVER_STYLES: Record<string, string> = {
