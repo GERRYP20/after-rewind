@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Obtenemos el nombre de la cookie desde las variables de entorno
-const COOKIE = process.env.SESSION_COOKIE_NAME ?? "__session";
+const COOKIE = process.env.SESSION_COOKIE_NAME ?? "session";
 
 export function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;

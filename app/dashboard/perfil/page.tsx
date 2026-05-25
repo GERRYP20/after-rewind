@@ -21,16 +21,6 @@ const IconCalendar = () => (
     <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
   </svg>
 );
-const IconBell = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 10a6 6 0 0 1 12 0c0 5 2 7 2 7H4s2-2 2-7" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-  </svg>
-);
-const IconLock = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
-  </svg>
-);
 const IconInfo = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="9" /><path d="M12 8v4m0 4h.01" />
@@ -351,8 +341,6 @@ export default function PerfilPage() {
               <nav style={{ width: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
                 <NavItem icon={<IconUser />} label="Información" active />
                 <NavItem icon={<IconCalendar />} label="Mis eventos" onClick={() => router.push("/dashboard")} />
-                <NavItem icon={<IconBell />} label="Notificaciones" />
-                <NavItem icon={<IconLock />} label="Seguridad" />
               </nav>
             </div>
 

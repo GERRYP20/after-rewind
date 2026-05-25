@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Invitation } from "@/lib/invitations/invitation.types";
 import SearchByCode from "@/components/search/SearchByCode";
+import { parseLocalDate } from "@/lib/date-utils";
 
 // ─── Metadatos de categoría: icono y color de fondo del badge ────────────────
 const CATEGORY_META: Record<string, { icon: string; bg: string }> = {
@@ -28,7 +29,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
   const cat = CATEGORY_META[categoryKey] ?? CATEGORY_META.default;
   const coverStyle = COVER_STYLES[index % COVER_STYLES.length];
 
-  const fecha = new Date(evento.date);
+  const fecha = parseLocalDate(evento.date);
   const dia = fecha.getDate();
   const mes = fecha.toLocaleDateString("es-MX", { month: "short" }).toUpperCase();
   const año = fecha.getFullYear();

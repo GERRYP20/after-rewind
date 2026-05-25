@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Invitation } from "@/lib/invitations/invitation.types";
 import SearchByCode from "@/components/search/SearchByCode";
+import { parseLocalDate } from "@/lib/date-utils";
 
 // ─── Colores de portada definidos como estilos inline (no clases dinámicas) ──
 const COVER_STYLES = [
@@ -41,7 +42,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
   const cat = CATEGORY_META[categoryKey] ?? CATEGORY_META.default;
 
   // Partes de la fecha formateadas por separado
-  const fecha = new Date(evento.date);
+  const fecha = parseLocalDate(evento.date);
   const dia = fecha.getDate();
   const mes = fecha
     .toLocaleDateString("es-MX", { month: "short" })

@@ -43,8 +43,10 @@ export default function CommentForm({ eventId, onCommentAdded }: CommentFormProp
       };
       onCommentAdded(newComment);
       setText("");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error submitting comment:", error);
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      alert(`Error al publicar comentario: ${message}`);
     } finally {
       setLoading(false);
     }

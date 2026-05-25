@@ -30,16 +30,10 @@ export async function GET(
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
     const currentUserId = decodedToken.uid;
 
-    // DEBUG: Verificar el userId del usuario actual en sesión
-    console.log("DEBUG - currentUserId de la sesión:", currentUserId);
-
     const { id: eventId } = await params;
 
     // Obtiene los comentarios del evento desde Firestore
     const comments: Comment[] = await CommentRepository.getByEvent(eventId);
-
-    // DEBUG: Verificar los comentarios trae userId desde Firestore
-    console.log("DEBUG - Comentarios obtenidos de Firestore:", JSON.stringify(comments));
 
     // Identifica cuáles comentarios pertenecen al usuario actual (para permitir edición/borrado)
     const commentsWithOwner = comments.map((comment) => ({
@@ -47,9 +41,6 @@ export async function GET(
       // Compara el userId del comentario con el currentUserId de la sesión
       isOwner: comment.userId === currentUserId,
     }));
-
-    // DEBUG: Verificar el resultado de isOwner para cada comentario
-    console.log("DEBUG - Comments with isOwner:", JSON.stringify(commentsWithOwner));
 
     return NextResponse.json(commentsWithOwner);
   } catch (error: unknown) {
@@ -79,11 +70,11 @@ export async function POST(
 
     // Obtiene la identidad del autor desde el token
     const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, false);
-    const userId = decodedToken.uid; // ID único del usuario desde Firebase Auth
+    const userId = decodedToken.uid; 
 
-    // Obtener datos frescos desde Firebase Auth para asegurar que el nombre y foto estén al día
+    // Obtener datos frescos desde Firebase Auth
     const userRecord = await adminAuth.getUser(userId);
-    const userName = userRecord.displayName || decodedToken.name || "Usuario";
+    const userName = userRecord.displayName || decodedToken.name || userRecord.email?.split('@')[0] || "Usuario";
     const userPhoto = userRecord.photoURL || null;
 
     const { id: eventId } = await params;
@@ -97,24 +88,13 @@ export async function POST(
       return NextResponse.json({ error: "El texto del comentario es requerido" }, { status: 400 });
     }
 
-    // Preparamos el objeto para guardar en Firestore
-    const commentPayload = {
-      eventId: eventId,
-      userId: userId,  // Explicitamente incluido el userId del usuario autenticado
-      userName: userName,
-      userPhoto: userPhoto,
-      text: text.trim(),
-    };
-
-    console.log("DEBUG - Payload que se envía a Firestore:", JSON.stringify(commentPayload));
-
     // Persistimos el comentario en la base de datos
     const commentId = await CommentRepository.create({
-      eventId: commentPayload.eventId,
-      userId: commentPayload.userId,
-      userName: commentPayload.userName,
-      userPhoto: commentPayload.userPhoto || undefined,
-      text: commentPayload.text,
+      eventId: eventId,
+      userId: userId,
+      userName: userName,
+      userPhoto: userPhoto || undefined,
+      text: text.trim(),
     });
 
     return NextResponse.json({ id: commentId, message: "Comentario creado" }, { status: 201 });

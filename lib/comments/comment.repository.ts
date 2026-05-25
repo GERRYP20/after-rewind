@@ -38,10 +38,17 @@ export const CommentRepository = {
     // Registramos la creación en los logs para debugging
     console.log("DEBUG - Repository create receives data:", JSON.stringify(data));
     
-    const docRef = await db.collection(COLLECTION_NAME).add({
-      ...data,
+    // Saneamiento riguroso para evitar errores de Firestore con 'undefined'
+    const firestoreData = {
+      eventId: data.eventId || "",
+      userId: data.userId || "",
+      userName: data.userName || "Anónimo",
+      userPhoto: data.userPhoto ?? null, // Reemplaza undefined con null
+      text: data.text || "",
       createdAt: new Date(),
-    });
+    };
+    
+    const docRef = await db.collection(COLLECTION_NAME).add(firestoreData);
     
     return docRef.id;
   },

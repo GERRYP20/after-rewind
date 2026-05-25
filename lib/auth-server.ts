@@ -15,7 +15,7 @@ import { cookies } from "next/headers";
 import { adminAuth } from "./firebase-admin";
 
 // Nombre de la cookie de sesión (configurable via .env)
-const COOKIE = process.env.SESSION_COOKIE_NAME ?? "__session";
+const COOKIE = process.env.SESSION_COOKIE_NAME ?? "session";
 
 /**
  * Obtiene el usuario actual desde la cookie de sesión
