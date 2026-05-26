@@ -15,6 +15,28 @@ import PhotoUpload from "@/components/photos/PhotoUpload";
 import PhotoGallery from "@/components/photos/PhotoGallery";
 import { formatLongDate } from "@/lib/date-utils";
 import { EventPhoto } from "@/lib/photos/event-photo.types";
+import {
+  Users,
+  Image as ImageIcon,
+  Calendar,
+  Lock,
+  Globe,
+  CheckCircle2,
+  Clock,
+  User,
+  AlertTriangle,
+  Mail,
+  LogOut,
+  Pencil,
+  Trash2,
+  Sparkles,
+  XCircle,
+  WifiOff,
+  Smile,
+  Check,
+  MapPin,
+  Search,
+} from "lucide-react";
 
 // ─── Colores de portada por categoría (primera palabra del título) ────────────
 const COVER_STYLES: Record<string, string> = {
@@ -29,7 +51,7 @@ const COVER_STYLES: Record<string, string> = {
 
 // ─── Interfaz para las acciones rápidas ───────────────────
 interface QuickAction {
-  icon: string;
+  icon: React.ComponentType<any>;
   label: string;
   desc: string;
   color: string;
@@ -42,13 +64,13 @@ interface InfoModalProps {
   onClose: () => void;
   title: string;
   message: string;
-  icon?: string;
+  icon?: React.ReactNode;
   confirmText?: string;
   onConfirm?: () => void;
   showCancel?: boolean;
 }
 
-function InfoModal({ isOpen, onClose, title, message, icon = "✨", confirmText = "Entendido", onConfirm, showCancel = false }: InfoModalProps) {
+function InfoModal({ isOpen, onClose, title, message, icon = <Sparkles size={48} style={{ color: "#E0B046", margin: "0 auto" }} />, confirmText = "Entendido", onConfirm, showCancel = false }: InfoModalProps) {
   if (!isOpen) return null;
   return (
     <div
@@ -80,7 +102,7 @@ function InfoModal({ isOpen, onClose, title, message, icon = "✨", confirmText 
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ fontSize: "48px", marginBottom: "16px" }}>{icon}</div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>{icon}</div>
         <h3 style={{ color: "white", fontSize: "20px", fontWeight: 800, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{title}</h3>
         <p style={{ color: "#a1a1aa", fontSize: "14px", lineHeight: 1.6, marginBottom: "24px" }}>{message}</p>
         <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
@@ -249,14 +271,14 @@ export default function DetalleEvento() {
             isOpen: true,
             title: "Solicitud Enviada",
             message: "Tu solicitud ha sido enviada al anfitrión. Te notificaremos cuando seas aprobado.",
-            icon: "📨"
+            icon: <Mail size={48} style={{ color: "#E0B046", margin: "0 auto" }} />
           });
         } else {
           setInfoModal({
             isOpen: true,
             title: "¡Bienvenido!",
             message: `Te has unido exitosamente a ${evento.title}. Ya puedes ver todas las fotos y comentarios.`,
-            icon: "🎉"
+            icon: <Sparkles size={48} style={{ color: "#E0B046", margin: "0 auto" }} />
           });
         }
       } else {
@@ -264,7 +286,7 @@ export default function DetalleEvento() {
           isOpen: true,
           title: "Error",
           message: data.error || "Hubo un problema al intentar unirte al evento.",
-          icon: "❌"
+          icon: <XCircle size={48} style={{ color: "#f43f5e", margin: "0 auto" }} />
         });
       }
     } catch (error) {
@@ -273,7 +295,7 @@ export default function DetalleEvento() {
         isOpen: true,
         title: "Error",
         message: "No se pudo establecer conexión con el servidor.",
-        icon: "🔌"
+        icon: <WifiOff size={48} style={{ color: "#f43f5e", margin: "0 auto" }} />
       });
     } finally {
       setIsJoining(false);
@@ -286,7 +308,7 @@ export default function DetalleEvento() {
       isOpen: true,
       title: "¿Salir del evento?",
       message: "¿Estás seguro de que quieres salir de este evento? Ya no podrás ver las fotos ni los comentarios compartidos.",
-      icon: "🚪",
+      icon: <LogOut size={48} style={{ color: "#f43f5e", margin: "0 auto" }} />,
       showCancel: true,
       confirmText: "Salir ahora",
       onConfirm: async () => {
@@ -305,7 +327,7 @@ export default function DetalleEvento() {
               isOpen: true,
               title: "Has salido",
               message: "Ya no formas parte de este evento.",
-              icon: "👋"
+              icon: <Smile size={48} style={{ color: "#38bdf8", margin: "0 auto" }} />
             });
           } else {
             const data = await res.json();
@@ -313,7 +335,7 @@ export default function DetalleEvento() {
               isOpen: true,
               title: "Error",
               message: data.error || "Hubo un problema al intentar salir del evento.",
-              icon: "❌"
+              icon: <XCircle size={48} style={{ color: "#f43f5e", margin: "0 auto" }} />
             });
           }
         } catch (error) {
@@ -322,7 +344,7 @@ export default function DetalleEvento() {
             isOpen: true,
             title: "Error",
             message: "Ocurrió un error inesperado.",
-            icon: "⚠️"
+            icon: <AlertTriangle size={48} style={{ color: "#eab308", margin: "0 auto" }} />
           });
         } finally {
           setIsJoining(false);
@@ -476,7 +498,7 @@ export default function DetalleEvento() {
       isOpen: true,
       title: "¿Rechazar invitado?",
       message: "¿Estás seguro de que quieres rechazar esta solicitud de acceso?",
-      icon: "👤",
+      icon: <User size={48} style={{ color: "#E0B046", margin: "0 auto" }} />,
       showCancel: true,
       confirmText: "Rechazar",
       onConfirm: async () => {
@@ -513,7 +535,7 @@ export default function DetalleEvento() {
       isOpen: true,
       title: "¿Eliminar invitado?",
       message: "¿Estás seguro de que quieres eliminar a este invitado del evento? Perderá el acceso inmediatamente.",
-      icon: "🚪",
+      icon: <LogOut size={48} style={{ color: "#f43f5e", margin: "0 auto" }} />,
       showCancel: true,
       confirmText: "Eliminar",
       onConfirm: async () => {
@@ -557,9 +579,9 @@ export default function DetalleEvento() {
 
   // Estadísticas reales
   const statsReales = [
-    { label: "Invitados", value: String(guestsData?.guestCount || evento?.guestCount || 0), icon: "👥" },
-    { label: "Fotos", value: String(fotos.length), icon: "🖼" },
-    { label: "Días para el evento", value: String(diasRestantes), icon: "📅" },
+    { label: "Invitados", value: String(guestsData?.guestCount || evento?.guestCount || 0), icon: Users },
+    { label: "Fotos", value: String(fotos.length), icon: ImageIcon },
+    { label: "Días para el evento", value: String(diasRestantes), icon: Calendar },
   ];
 
   // Pantalla de carga
@@ -612,7 +634,7 @@ export default function DetalleEvento() {
           gap: "16px",
         }}
       >
-        <p style={{ fontSize: "48px" }}>🔍</p>
+        <Search size={48} style={{ color: "#E0B046", marginBottom: "16px" }} />
         <p style={{ color: "white", fontWeight: 900, fontSize: "20px" }}>
           Evento no encontrado
         </p>
@@ -799,7 +821,7 @@ export default function DetalleEvento() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "24px" }}>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                        <span style={{ fontSize: "32px" }}>📍</span>
+                        <MapPin size={32} style={{ color: "#E0B046" }} />
                         <div>
                             <p style={{ color: "#71717a", fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>Lugar del evento</p>
                             <p style={{ color: "white", fontSize: "18px", fontWeight: 900, margin: 0 }}>{evento.location}</p>
@@ -823,9 +845,10 @@ export default function DetalleEvento() {
                                     src={evento.hostPhoto} 
                                     alt={evento.hostName} 
                                     style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                    sizes="40px"
                                 />
                             ) : (
-                                <span style={{ fontSize: "20px" }}>👤</span>
+                                <User size={20} style={{ color: "#a1a1aa" }} />
                             )}
                         </div>
                         <div>
@@ -899,8 +922,12 @@ export default function DetalleEvento() {
             alignItems: "center",
             gap: "24px"
           }}>
-            <div style={{ fontSize: "64px" }}>
-              {currentUserGuestStatus === "none" ? "👋" : "⏳"}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+              {currentUserGuestStatus === "none" ? (
+                <Sparkles size={64} style={{ color: "#E0B046" }} />
+              ) : (
+                <Clock size={64} style={{ color: "#E0B046" }} className="animate-pulse" />
+              )}
             </div>
             <div>
               <h2 style={{ color: "white", fontSize: "24px", fontWeight: 900, margin: "0 0 8px 0" }}>
@@ -934,7 +961,13 @@ export default function DetalleEvento() {
                   boxShadow: "0 10px 30px rgba(224, 176, 70, 0.2)"
                 }}
               >
-                {isJoining ? "Uniéndote..." : "✨ Unirse al Evento"}
+                {isJoining ? (
+                  "Uniéndote..."
+                ) : (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                    <Sparkles size={16} /> Unirse al Evento
+                  </span>
+                )}
               </button>
             )}
 
@@ -1141,20 +1174,20 @@ export default function DetalleEvento() {
 
                 {[
                   {
-                    icon: "🖼",
+                    icon: ImageIcon,
                     label: "Ver álbum de fotos",
                     desc: "Galería completa del evento",
                     color: "#f59e0b",
                   },
                   {
-                    icon: "✉️",
+                    icon: Mail,
                     label: "Compartir invitación",
                     desc: "Envía el enlace a tus invitados",
                     color: "#38bdf8",
                   },
                   ...(currentUserGuestStatus === "confirmed" ? [
                     {
-                      icon: "🚪",
+                      icon: LogOut,
                       label: "Salir del evento",
                       desc: "Ya no tendrás acceso a este álbum",
                       color: "#f43f5e",
@@ -1162,14 +1195,14 @@ export default function DetalleEvento() {
                     }
                   ] : []),
                   ...(isOwner ? [                    {
-                      icon: "✏️",
+                      icon: Pencil,
                       label: "Editar evento",
                       desc: "Modifica los detalles",
                       color: "#a78bfa",
                       action: handleEditClick,
                     },
                     {
-                      icon: "🗑",
+                      icon: Trash2,
                       label: "Eliminar evento",
                       desc: "Esta acción no se puede deshacer",
                       color: "#f43f5e",
@@ -1215,10 +1248,9 @@ export default function DetalleEvento() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: "16px",
                       }}
                     >
-                      {accion.icon}
+                      <accion.icon size={16} style={{ color: accion.color }} />
                     </span>
                     <div>
                       <p
@@ -1300,7 +1332,11 @@ export default function DetalleEvento() {
                       : "rgba(16, 185, 129, 0.3)"}`,
                   }}
                 >
-                  {evento?.visibility === "private" ? "🔒 Privado" : "🌐 Público"}
+                  {evento?.visibility === "private" ? (
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Lock size={12} /> Privado</span>
+                  ) : (
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Globe size={12} /> Público</span>
+                  )}
                 </span>
               </div>
 
@@ -1308,7 +1344,7 @@ export default function DetalleEvento() {
               {guestsData?.confirmed && guestsData.confirmed.length > 0 && (
                 <div style={{ marginBottom: isOwner && guestsData.pending.length > 0 ? "32px" : "0" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-                    <span style={{ fontSize: "14px" }}>✅</span>
+                    <CheckCircle2 size={16} style={{ color: "#10b981" }} />
                     <p style={{ color: "#52525b", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
                       Invitados Confirmados ({guestsData.confirmed.length})
                     </p>
@@ -1348,7 +1384,7 @@ export default function DetalleEvento() {
                               style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                             />
                           ) : (
-                            "👤"
+                            <User size={16} style={{ color: "#a1a1aa" }} />
                           )}
                         </div>
                         <div style={{ flex: 1 }}>
@@ -1407,7 +1443,7 @@ export default function DetalleEvento() {
               {isOwner && guestsData?.pending && guestsData.pending.length > 0 && (
                 <div style={{ marginTop: "12px", paddingTop: "24px", borderTop: "1px dashed rgba(255,255,255,0.1)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-                    <span style={{ fontSize: "14px" }}>⏳</span>
+                    <Clock size={16} style={{ color: "#f59e0b" }} />
                     <p style={{ color: "#f59e0b", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
                       Solicitudes de Acceso ({guestsData.pending.length})
                     </p>
@@ -1447,7 +1483,7 @@ export default function DetalleEvento() {
                               style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                             />
                           ) : (
-                            "👤"
+                            <User size={16} style={{ color: "#a1a1aa" }} />
                           )}
                         </div>
                         <div style={{ flex: 1 }}>

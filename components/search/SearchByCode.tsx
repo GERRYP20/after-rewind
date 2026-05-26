@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Search } from "lucide-react";
 
 /**
  * Componente de búsqueda por código de acceso.
@@ -90,7 +91,7 @@ export default function SearchByCode() {
             gap: "8px",
           }}
         >
-          🔍 Unirse a un evento
+          <Search size={18} style={{ display: "inline", verticalAlign: "middle" }} /> Unirse a un evento
         </h2>
         <p
           style={{

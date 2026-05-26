@@ -6,6 +6,21 @@ import Image from "next/image";
 import { Invitation } from "@/lib/invitations/invitation.types";
 import SearchByCode from "@/components/search/SearchByCode";
 import { parseLocalDate } from "@/lib/date-utils";
+import {
+  Cake,
+  Gem,
+  Plane,
+  Utensils,
+  Handshake,
+  TreePine,
+  Sparkles,
+  Calendar,
+  MapPin,
+  Image as ImageIcon,
+  Clock,
+  History,
+  Grid,
+} from "lucide-react";
 
 // ─── Colores de portada definidos como estilos inline (no clases dinámicas) ──
 const COVER_STYLES = [
@@ -18,14 +33,14 @@ const COVER_STYLES = [
 ];
 
 // ─── Metadatos de categoría: icono y color de fondo del badge ────────────────
-const CATEGORY_META: Record<string, { icon: string; bg: string }> = {
-  cumpleaños: { icon: "🎂", bg: "#ec4899" },
-  boda: { icon: "💍", bg: "#f43f5e" },
-  viaje: { icon: "✈️", bg: "#0ea5e9" },
-  cena: { icon: "🍽", bg: "#f97316" },
-  reunión: { icon: "🤝", bg: "#8b5cf6" },
-  picnic: { icon: "🧺", bg: "#22c55e" },
-  default: { icon: "✦", bg: "#E0B046 " },
+const CATEGORY_META: Record<string, { icon: React.ComponentType<any>; bg: string }> = {
+  cumpleaños: { icon: Cake, bg: "#ec4899" },
+  boda: { icon: Gem, bg: "#f43f5e" },
+  viaje: { icon: Plane, bg: "#0ea5e9" },
+  cena: { icon: Utensils, bg: "#f97316" },
+  reunión: { icon: Handshake, bg: "#8b5cf6" },
+  picnic: { icon: TreePine, bg: "#22c55e" },
+  default: { icon: Sparkles, bg: "#E0B046 " },
 };
 
 type Filter = "todos" | "próximos" | "pasados";
@@ -117,7 +132,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
                 gap: "6px",
               }}
             >
-              {cat.icon} {categoryKey !== "default" ? categoryKey : "evento"}
+              <cat.icon size={12} /> {categoryKey !== "default" ? categoryKey : "evento"}
             </span>
           </div>
 
@@ -139,7 +154,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
               zIndex: 10
             }}
           >
-            <span style={{ fontSize: "13px" }}>📅</span>
+            <Calendar size={13} style={{ color: "#E0B046" }} />
             <span style={{ color: "white", fontSize: "12px", fontWeight: 700 }}>
               {dia} {mes}, {año}
             </span>
@@ -201,7 +216,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
               textOverflow: "ellipsis",
             }}
           >
-            <span style={{ color: "#E0B046 " }}>📍</span>
+            <MapPin size={14} style={{ color: "#E0B046" }} />
             {evento.location}
           </p>
 
@@ -258,7 +273,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
                 gap: "6px",
               }}
             >
-              🖼 0 fotos
+              <ImageIcon size={14} style={{ color: "#71717a" }} /> 0 fotos
             </span>
           </div>
         </div>
@@ -422,10 +437,10 @@ export default function Dashboard() {
       </div>
     );
 
-  const FILTERS: { key: Filter; label: string; icon: string }[] = [
-    { key: "todos", label: "Todos", icon: "⊞" },
-    { key: "próximos", label: "Próximos", icon: "⏳" },
-    { key: "pasados", label: "Pasados", icon: "🕓" },
+  const FILTERS: { key: Filter; label: string; icon: React.ComponentType<any> }[] = [
+    { key: "todos", label: "Todos", icon: Grid },
+    { key: "próximos", label: "Próximos", icon: Clock },
+    { key: "pasados", label: "Pasados", icon: History },
   ];
 
   return (
@@ -508,7 +523,7 @@ export default function Dashboard() {
                 boxShadow: filter === f.key ? "0 4px 12px rgba(224, 176, 70, 0.35)" : "none",
               }}
             >
-              <span>{f.icon}</span>
+              <f.icon size={15} />
               {f.label}
             </button>
           ))}

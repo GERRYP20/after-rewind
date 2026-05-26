@@ -9,29 +9,7 @@ import { auth } from "@/lib/firebase-client";
 import { updateProfile } from "firebase/auth";
 import PublicHeder from "@/components/layout/PublicHeder";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
-
-// ── Íconos ──────────────────────────────────────────────────────────────────
-const IconUser = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-  </svg>
-);
-const IconCalendar = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-  </svg>
-);
-const IconInfo = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="9" /><path d="M12 8v4m0 4h.01" />
-  </svg>
-);
-const IconCamera = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14.5 4h-5l-2 3H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5z" />
-    <circle cx="12" cy="13" r="3" />
-  </svg>
-);
+import { User as UserIcon, Calendar, Info, Camera } from "lucide-react";
 
 // ── Componente: campo de info ────────────────────────────────────────────────
 function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
@@ -304,7 +282,7 @@ export default function PerfilPage() {
                   {localPhotoURL ? (
                     <Image src={localPhotoURL} alt="Foto" fill style={{ objectFit: "cover" }} unoptimized />
                   ) : (
-                    <span style={{ fontSize: 32 }}>👤</span>
+                    <UserIcon size={32} style={{ color: "rgba(255,255,255,0.3)" }} />
                   )}
                   {/* Overlay hover */}
                   <div className="group-avatar-overlay" style={{
@@ -316,7 +294,7 @@ export default function PerfilPage() {
                     onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
                     onMouseLeave={e => (e.currentTarget.style.opacity = "0")}
                   >
-                    <IconCamera />
+                    <Camera size={20} style={{ color: "white" }} />
                   </div>
                 </div>
               </div>
@@ -339,8 +317,8 @@ export default function PerfilPage() {
 
               {/* Nav */}
               <nav style={{ width: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
-                <NavItem icon={<IconUser />} label="Información" active />
-                <NavItem icon={<IconCalendar />} label="Mis eventos" onClick={() => router.push("/dashboard")} />
+                <NavItem icon={<UserIcon size={15} />} label="Información" active />
+                <NavItem icon={<Calendar size={15} />} label="Mis eventos" onClick={() => router.push("/dashboard")} />
               </nav>
             </div>
 
@@ -390,7 +368,7 @@ export default function PerfilPage() {
                 border: "1px solid rgba(196,155,74,0.15)",
               }}>
                 <span style={{ color: "rgba(196,155,74,0.6)", flexShrink: 0, marginTop: 1 }}>
-                  <IconInfo />
+                  <Info size={14} />
                 </span>
                 <p style={{ fontSize: 12, color: "rgba(196,155,74,0.7)", lineHeight: 1.65, margin: 0 }}>
                   <span style={{ fontWeight: 500, color: "rgba(196,155,74,0.9)" }}>Nota:</span>{" "}
