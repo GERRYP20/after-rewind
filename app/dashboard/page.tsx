@@ -132,7 +132,7 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
                 gap: "6px",
               }}
             >
-              <cat.icon size={12} /> {categoryKey !== "default" ? categoryKey : "evento"}
+              <cat.icon size={12} style={{ color: "#E0B046" }} /> {categoryKey !== "default" ? categoryKey : "evento"}
             </span>
           </div>
 

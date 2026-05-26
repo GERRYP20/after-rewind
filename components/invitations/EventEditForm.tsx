@@ -280,7 +280,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
                     transition: "all 0.2s",
                   }}
                 >
-                  <cat.icon size={20} />
+                  <cat.icon size={20} style={{ color: "#E0B046" }} />
                   {cat.label}
                 </button>
               ))}

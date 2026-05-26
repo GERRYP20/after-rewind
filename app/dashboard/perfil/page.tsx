@@ -9,7 +9,97 @@ import { auth } from "@/lib/firebase-client";
 import { updateProfile } from "firebase/auth";
 import PublicHeder from "@/components/layout/PublicHeder";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
-import { User as UserIcon, Calendar, Info, Camera } from "lucide-react";
+import { User as UserIcon, Calendar, Info, Camera, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+
+// ─── Componente de Modal de Información Genérico ────────────────────────────
+interface InfoModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  icon?: React.ReactNode;
+  confirmText?: string;
+  onConfirm?: () => void;
+  showCancel?: boolean;
+}
+
+function InfoModal({ isOpen, onClose, title, message, icon = <Sparkles size={48} style={{ color: "#c49b4a", margin: "0 auto" }} />, confirmText = "Entendido", onConfirm, showCancel = false }: InfoModalProps) {
+  if (!isOpen) return null;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        backdropFilter: "blur(4px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 2000,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: "#18181b",
+          border: "1px solid #3f3f46",
+          borderRadius: "20px",
+          padding: "32px",
+          maxWidth: "400px",
+          width: "90%",
+          textAlign: "center",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>{icon}</div>
+        <h3 style={{ color: "white", fontSize: "20px", fontWeight: 800, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{title}</h3>
+        <p style={{ color: "#a1a1aa", fontSize: "14px", lineHeight: 1.6, marginBottom: "24px" }}>{message}</p>
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+          {showCancel && (
+            <button
+              onClick={onClose}
+              style={{
+                padding: "12px 24px",
+                borderRadius: "10px",
+                backgroundColor: "transparent",
+                border: "1px solid #3f3f46",
+                color: "#a1a1aa",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer"
+              }}
+            >
+              Cancelar
+            </button>
+          )}
+          <button
+            onClick={() => {
+              if (onConfirm) onConfirm();
+              onClose();
+            }}
+            style={{
+              padding: "12px 24px",
+              borderRadius: "10px",
+              backgroundColor: "#c49b4a",
+              border: "none",
+              color: "black",
+              fontSize: "13px",
+              fontWeight: 800,
+              cursor: "pointer",
+              textTransform: "uppercase"
+            }}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Componente: campo de info ────────────────────────────────────────────────
 function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
@@ -95,6 +185,22 @@ export default function PerfilPage() {
     upcomingEvents: 0,
     daysActive: 0
   });
+
+  // Estado para el modal de información genérico
+  const [infoModal, setInfoModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    icon?: React.ReactNode;
+    onConfirm?: () => void;
+    showCancel?: boolean;
+    confirmText?: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -163,11 +269,21 @@ export default function PerfilPage() {
           }).catch(err => console.error("Error al borrar foto antigua:", err));
         }
 
-        alert("¡Foto actualizada!");
+        setInfoModal({
+          isOpen: true,
+          title: "¡Éxito!",
+          message: "Tu foto de perfil ha sido actualizada correctamente.",
+          icon: <CheckCircle2 size={48} style={{ color: "#c49b4a", margin: "0 auto" }} />
+        });
       }
     } catch (err) {
       console.error(err);
-      alert("No se pudo actualizar la foto.");
+      setInfoModal({
+        isOpen: true,
+        title: "Error",
+        message: "No se pudo actualizar la foto de perfil. Por favor, inténtalo de nuevo.",
+        icon: <AlertCircle size={48} style={{ color: "#f43f5e", margin: "0 auto" }} />
+      });
     } finally {
       setUploading(false);
     }
@@ -382,6 +498,17 @@ export default function PerfilPage() {
       </main>
 
       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+
+      <InfoModal 
+        isOpen={infoModal.isOpen}
+        onClose={() => setInfoModal(prev => ({ ...prev, isOpen: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        icon={infoModal.icon}
+        onConfirm={infoModal.onConfirm}
+        showCancel={infoModal.showCancel}
+        confirmText={infoModal.confirmText}
+      />
     </div>
   );
 }

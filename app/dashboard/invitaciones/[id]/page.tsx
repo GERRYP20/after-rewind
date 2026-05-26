@@ -36,6 +36,12 @@ import {
   Check,
   MapPin,
   Search,
+  Gem,
+  Cake,
+  Plane,
+  Utensils,
+  Handshake,
+  TreePine,
 } from "lucide-react";
 
 // ─── Colores de portada por categoría (primera palabra del título) ────────────
@@ -165,7 +171,7 @@ export default function DetalleEvento() {
     isOpen: boolean;
     title: string;
     message: string;
-    icon?: string;
+    icon?: React.ReactNode;
     onConfirm?: () => void;
     showCancel?: boolean;
     confirmText?: string;
@@ -579,9 +585,9 @@ export default function DetalleEvento() {
 
   // Estadísticas reales
   const statsReales = [
-    { label: "Invitados", value: String(guestsData?.guestCount || evento?.guestCount || 0), icon: Users },
-    { label: "Fotos", value: String(fotos.length), icon: ImageIcon },
-    { label: "Días para el evento", value: String(diasRestantes), icon: Calendar },
+    { label: "Invitados", value: String(guestsData?.guestCount || evento?.guestCount || 0), icon: <Users size={14} style={{ color: "#E0B046" }} /> },
+    { label: "Fotos", value: String(fotos.length), icon: <ImageIcon size={14} style={{ color: "#E0B046" }} /> },
+    { label: "Días para el evento", value: String(diasRestantes), icon: <Calendar size={14} style={{ color: "#E0B046" }} /> },
   ];
 
   // Pantalla de carga
@@ -761,9 +767,24 @@ export default function DetalleEvento() {
               padding: "8px 16px",
               borderRadius: "9999px",
               border: "1px solid rgba(255,255,255,0.15)",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
             }}
           >
-            ✦ {categoryKey !== "default" ? categoryKey : "evento"}
+            {(() => {
+              const Icon = {
+                boda: Gem,
+                cumpleaños: Cake,
+                viaje: Plane,
+                cena: Utensils,
+                reunión: Handshake,
+                picnic: TreePine,
+                default: Sparkles
+              }[categoryKey as keyof typeof COVER_STYLES] || Sparkles;
+              return <Icon size={14} style={{ color: "#E0B046" }} />;
+            })()}
+            {categoryKey !== "default" ? categoryKey : "evento"}
           </span>
         </div>
 
@@ -788,7 +809,7 @@ export default function DetalleEvento() {
                 color: "white",
                 fontSize: "18px",
                 fontWeight: 700,
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
                 gap: "10px",
                 backgroundColor: "rgba(255,255,255,0.1)",
@@ -798,7 +819,7 @@ export default function DetalleEvento() {
                 border: "1px solid rgba(255,255,255,0.1)"
               }}
             >
-              <span style={{ fontSize: "22px" }}>📅</span>{" "}
+              <Calendar size={20} style={{ color: "#E0B046" }} />
               {formatLongDate(evento.date)}
             </span>
           </div>
@@ -1741,14 +1762,15 @@ export default function DetalleEvento() {
                   width: "64px",
                   height: "64px",
                   borderRadius: "50%",
-                  backgroundColor: "#fef2f2",
+                  backgroundColor: "rgba(244, 63, 94, 0.1)",
+                  border: "1px solid rgba(244, 63, 94, 0.2)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: "16px",
                 }}
               >
-                <span style={{ fontSize: "32px" }}>⚠️</span>
+                <AlertTriangle size={32} style={{ color: "#f43f5e" }} />
               </div>
               <h3
                 style={{

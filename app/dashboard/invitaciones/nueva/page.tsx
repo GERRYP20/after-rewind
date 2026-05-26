@@ -9,13 +9,13 @@ import { Gem, Cake, Plane, UtensilsCrossed, Users, TreePine, Sparkles, Globe, Lo
 
 // ─── Categorías disponibles para el evento ──────
 const CATEGORIAS = [
-  { key: "boda",       label: "Boda",       icon: <Gem size={20} /> },
-  { key: "cumpleaños", label: "Cumpleaños", icon: <Cake size={20} /> },
-  { key: "viaje",      label: "Viaje",      icon: <Plane size={20} /> },
-  { key: "cena",       label: "Cena",       icon: <UtensilsCrossed size={20} /> },
-  { key: "reunión",    label: "Reunión",    icon: <Users size={20} /> },
-  { key: "picnic",     label: "Picnic",     icon: <TreePine size={20} /> },
-  { key: "otro",       label: "Otro",       icon: <Sparkles size={20} /> },
+  { key: "boda",       label: "Boda",       icon: <Gem size={20} style={{ color: "#E0B046" }} /> },
+  { key: "cumpleaños", label: "Cumpleaños", icon: <Cake size={20} style={{ color: "#E0B046" }} /> },
+  { key: "viaje",      label: "Viaje",      icon: <Plane size={20} style={{ color: "#E0B046" }} /> },
+  { key: "cena",       label: "Cena",       icon: <UtensilsCrossed size={20} style={{ color: "#E0B046" }} /> },
+  { key: "reunión",    label: "Reunión",    icon: <Users size={20} style={{ color: "#E0B046" }} /> },
+  { key: "picnic",     label: "Picnic",     icon: <TreePine size={20} style={{ color: "#E0B046" }} /> },
+  { key: "otro",       label: "Otro",       icon: <Sparkles size={20} style={{ color: "#E0B046" }} /> },
 ];
 
 export default function NuevaInvitacion() {
