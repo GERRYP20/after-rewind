@@ -158,7 +158,7 @@ export default function DetalleEvento() {
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   
   const [evento, setEvento] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,6 +166,11 @@ export default function DetalleEvento() {
   const [comentarios, setComentarios] = useState<Comment[]>([]);
   const [fotos, setFotos] = useState<EventPhoto[]>([]);
   
+  // Redirigir si no está autenticado
+  useEffect(() => {
+    if (!authLoading && !user) router.push("/login");
+  }, [user, authLoading, router]);
+
   // Estado para el modal de información genérico
   const [infoModal, setInfoModal] = useState<{
     isOpen: boolean;
@@ -180,6 +185,38 @@ export default function DetalleEvento() {
     title: "",
     message: "",
   });
+
+  // Acciones para los botones rápidos
+  const handleScrollToAlbum = () => {
+    document.getElementById("album-section")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleShareInvitation = async () => {
+    if (!evento) return;
+    const shareUrl = window.location.href;
+    const shareText = `¡Te invito a mi evento: ${evento.title}! Únete con el código: ${evento.accessCode}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: evento.title,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (error) {
+        console.log("Error al compartir:", error);
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        setInfoModal({
+          isOpen: true,
+          title: "¡Enlace copiado!",
+          message: "El enlace de la invitación ha sido copiado al portapapeles.",
+          icon: <CheckCircle2 size={48} style={{ color: "#E0B046", margin: "0 auto" }} />,
+        });
+      });
+    }
+  };
 
   // Estados para edición y eliminación del evento
   const [isEditing, setIsEditing] = useState(false);
@@ -1199,12 +1236,14 @@ export default function DetalleEvento() {
                     label: "Ver álbum de fotos",
                     desc: "Galería completa del evento",
                     color: "#f59e0b",
+                    action: handleScrollToAlbum,
                   },
                   {
                     icon: Mail,
                     label: "Compartir invitación",
                     desc: "Envía el enlace a tus invitados",
                     color: "#38bdf8",
+                    action: handleShareInvitation,
                   },
                   ...(currentUserGuestStatus === "confirmed" ? [
                     {
@@ -1568,6 +1607,7 @@ export default function DetalleEvento() {
             </div>
 
             <div
+              id="album-section"
               style={{
                 backgroundColor: "#18181b",
                 border: "1px solid #3f3f46",
