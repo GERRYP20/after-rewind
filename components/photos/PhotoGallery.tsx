@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { EventPhoto } from "@/lib/photos/event-photo.types";
+import { ImageIcon, Trash2, User, X, AlertCircle } from "lucide-react";
 
 interface PhotoGalleryProps {
   photos: EventPhoto[];
@@ -62,7 +63,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
         borderRadius: "16px",
         color: "#52525b"
       }}>
-        <p style={{ fontSize: "40px", margin: "0 0 10px 0" }}>🖼️</p>
+        <div style={{ marginBottom: "10px" }}><ImageIcon size={40} style={{ color: "#52525b" }} /></div>
         <p style={{ fontWeight: 700, fontSize: "14px" }}>ÁLBUM VACÍO</p>
         <p style={{ fontSize: "12px" }}>Sé el primero en subir una foto de este momento.</p>
       </div>
@@ -133,7 +134,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
                   }}
                   className="delete-btn"
                 >
-                  {deletingId === photo.id ? "..." : "🗑️"}
+                  {deletingId === photo.id ? "..." : <Trash2 size={14} />}
                 </button>
               )}
 
@@ -149,7 +150,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
                 transition: "opacity 0.2s",
               }} className="photo-label">
                 <p style={{ color: "white", fontSize: "10px", fontWeight: 700, margin: 0 }}>
-                  👤 {photo.userName}
+                  <User size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} /> {photo.userName}
                 </p>
               </div>
               <style jsx>{`
@@ -208,7 +209,7 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
                 fontSize: "30px",
                 cursor: "pointer"
               }}
-            >✕</button>
+            ><X size={24} /></button>
           </div>
 
           {/* Contenedor de la imagen expandida */}
@@ -273,9 +274,8 @@ export default function PhotoGallery({ photos, currentUserId, isEventOwner, onDe
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "24px",
               margin: "0 auto 16px"
-            }}>🗑️</div>
+            }}><AlertCircle size={28} style={{ color: "#f43f5e" }} /></div>
             
             <h3 style={{ color: "white", fontSize: "18px", fontWeight: 800, margin: "0 0 8px 0" }}>
               ¿Eliminar esta foto?

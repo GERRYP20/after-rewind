@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Comment } from "@/lib/comments/comment.types";
+import { AlertCircle, User, Pencil, Trash2, MessageSquare } from "lucide-react";
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -54,7 +55,7 @@ function DeleteConfirmModal({ isOpen, onConfirm, onCancel, userName }: DeleteCon
               marginBottom: "16px",
             }}
           >
-            <span style={{ fontSize: "32px" }}>⚠️</span>
+            <AlertCircle size={32} style={{ color: "#ef4444" }} />
           </div>
           <h3
             style={{
@@ -275,7 +276,7 @@ function CommentItem({
                 style={{ width: "100%", height: "100%", objectFit: "cover" }} 
               />
             ) : (
-              <span style={{ fontSize: "14px" }}>👤</span>
+              <User size={14} style={{ color: "#a1a1aa" }} />
             )}
           </div>
           <span
@@ -310,14 +311,16 @@ function CommentItem({
                   border: "none",
                   color: "#71717a",
                   cursor: loading ? "not-allowed" : "pointer",
-                  fontSize: "14px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   padding: "4px",
                   transition: "color 0.2s",
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "#E0B046")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "#71717a")}
               >
-                ✏️
+                <Pencil size={14} />
               </button>
               {/* Botón de eliminar */}
               <button
@@ -329,14 +332,16 @@ function CommentItem({
                   border: "none",
                   color: "#71717a",
                   cursor: loading ? "not-allowed" : "pointer",
-                  fontSize: "14px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   padding: "4px",
                   transition: "color 0.2s",
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "#f43f5e")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "#71717a")}
               >
-                🗑️
+                <Trash2 size={14} />
               </button>
             </div>
           )}
@@ -435,9 +440,12 @@ export default function CommentList({ comments, onEdit, onDelete }: CommentListP
           textAlign: "center",
           padding: "40px 20px",
           color: "#52525b",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        <span style={{ fontSize: "32px", display: "block", marginBottom: "12px" }}>💬</span>
+        <MessageSquare size={32} style={{ color: "#52525b", marginBottom: "12px" }} />
         <p style={{ margin: 0, fontSize: "14px" }}>Aún no hay comentarios. Sé el primero en opinar.</p>
       </div>
     );

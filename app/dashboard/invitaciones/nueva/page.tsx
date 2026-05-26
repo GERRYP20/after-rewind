@@ -5,16 +5,17 @@ import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { generateAccessCode } from "@/lib/utils";
+import { Gem, Cake, Plane, UtensilsCrossed, Users, TreePine, Sparkles, Globe, Lock, RefreshCw, Plus, Trash2, ImageIcon, Calendar, MapPin } from "lucide-react";
 
 // ─── Categorías disponibles para el evento ──────
 const CATEGORIAS = [
-  { key: "boda",       label: "Boda",       icon: "💍" },
-  { key: "cumpleaños", label: "Cumpleaños", icon: "🎂" },
-  { key: "viaje",      label: "Viaje",      icon: "✈️" },
-  { key: "cena",       label: "Cena",       icon: "🍽" },
-  { key: "reunión",    label: "Reunión",    icon: "🤝" },
-  { key: "picnic",     label: "Picnic",     icon: "🧺" },
-  { key: "otro",       label: "Otro",       icon: "✦"  },
+  { key: "boda",       label: "Boda",       icon: <Gem size={20} style={{ color: "#E0B046" }} /> },
+  { key: "cumpleaños", label: "Cumpleaños", icon: <Cake size={20} style={{ color: "#E0B046" }} /> },
+  { key: "viaje",      label: "Viaje",      icon: <Plane size={20} style={{ color: "#E0B046" }} /> },
+  { key: "cena",       label: "Cena",       icon: <UtensilsCrossed size={20} style={{ color: "#E0B046" }} /> },
+  { key: "reunión",    label: "Reunión",    icon: <Users size={20} style={{ color: "#E0B046" }} /> },
+  { key: "picnic",     label: "Picnic",     icon: <TreePine size={20} style={{ color: "#E0B046" }} /> },
+  { key: "otro",       label: "Otro",       icon: <Sparkles size={20} style={{ color: "#E0B046" }} /> },
 ];
 
 export default function NuevaInvitacion() {
@@ -243,7 +244,7 @@ export default function NuevaInvitacion() {
                         transition: "all 0.2s",
                       }}
                     >
-                      <span style={{ fontSize: "20px" }}>{cat.icon}</span>
+                      {cat.icon}
                       {cat.label}
                     </button>
                   ))}
@@ -268,7 +269,7 @@ export default function NuevaInvitacion() {
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-                      <span style={{ fontSize: "20px" }}>🌐</span>
+                      <Globe size={20} />
                       <span style={{
                         color: visibility === "public" ? "#E0B046" : "#fafafa",
                         fontWeight: 700,
@@ -297,7 +298,7 @@ export default function NuevaInvitacion() {
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-                      <span style={{ fontSize: "20px" }}>🔒</span>
+                      <Lock size={20} />
                       <span style={{
                         color: visibility === "private" ? "#E0B046" : "#fafafa",
                         fontWeight: 700,
@@ -419,7 +420,7 @@ export default function NuevaInvitacion() {
                       onMouseEnter={e => { e.currentTarget.style.borderColor = "#E0B046"; e.currentTarget.style.backgroundColor = "rgba(224, 176, 70, 0.1)"; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = "#3f3f46"; e.currentTarget.style.backgroundColor = "#18181b"; }}
                     >
-                      🔄
+                      <RefreshCw size={18} />
                     </button>
                   </div>
                   <p style={{ color: "#52525b", fontSize: "11px", marginTop: "6px" }}>
@@ -474,7 +475,7 @@ export default function NuevaInvitacion() {
                 />
               ) : (
                 <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#52525b", gap: "12px" }}>
-                  <span style={{ fontSize: "50px" }}>🖼️</span>
+                  <ImageIcon size={50} style={{ color: "#52525b" }} />
                   <p style={{ fontWeight: 800, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Sin foto de portada seleccionada</p>
                 </div>
               )}
@@ -512,7 +513,7 @@ export default function NuevaInvitacion() {
                   onMouseEnter={e => e.currentTarget.style.borderColor = "#E0B046"}
                   onMouseLeave={e => e.currentTarget.style.borderColor = "#3f3f46"}
                 >
-                  {formData.imageUrl ? "🔄 Cambiar Imagen" : "➕ Subir Imagen Principal"}
+                  {formData.imageUrl ? <><RefreshCw size={14} /> Cambiar Imagen</> : <><Plus size={14} /> Subir Imagen Principal</>}
                 </button>
                 
                 {formData.imageUrl && (
@@ -531,7 +532,7 @@ export default function NuevaInvitacion() {
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(244, 63, 94, 0.2)"}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = "rgba(244, 63, 94, 0.1)"}
                   >
-                    🗑️
+                    <Trash2 size={18} />
                   </button>
                 )}
               </div>
@@ -556,7 +557,7 @@ export default function NuevaInvitacion() {
                   {formData.title || "Sin título"}
                 </h3>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", color: "#71717a", fontSize: "14px" }}>
-                  <span>📅 {formData.date || "Sin fecha"}</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Calendar size={14} /> {formData.date || "Sin fecha"}</span>
                   {formData.locationUrl ? (
                     <a 
                       href={formData.locationUrl} 
@@ -564,10 +565,10 @@ export default function NuevaInvitacion() {
                       rel="noopener noreferrer"
                       style={{ color: "#E0B046", textDecoration: "none", fontWeight: 700 }}
                     >
-                      📍 {formData.location || "Sin ubicación"} ↗
+                      <MapPin size={14} style={{ display: "inline", verticalAlign: "middle" }} /> {formData.location || "Sin ubicación"} ↗
                     </a>
                   ) : (
-                    <span>📍 {formData.location || "Sin ubicación"}</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><MapPin size={14} /> {formData.location || "Sin ubicación"}</span>
                   )}
                   <span style={{ color: "#E0B046", fontWeight: 700 }}>#{formData.accessCode}</span>
                 </div>

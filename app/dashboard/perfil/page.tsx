@@ -9,29 +9,97 @@ import { auth } from "@/lib/firebase-client";
 import { updateProfile } from "firebase/auth";
 import PublicHeder from "@/components/layout/PublicHeder";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
+import { User as UserIcon, Calendar, Info, Camera, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 
-// ── Íconos ──────────────────────────────────────────────────────────────────
-const IconUser = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-  </svg>
-);
-const IconCalendar = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-  </svg>
-);
-const IconInfo = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="9" /><path d="M12 8v4m0 4h.01" />
-  </svg>
-);
-const IconCamera = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14.5 4h-5l-2 3H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5z" />
-    <circle cx="12" cy="13" r="3" />
-  </svg>
-);
+// ─── Componente de Modal de Información Genérico ────────────────────────────
+interface InfoModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  icon?: React.ReactNode;
+  confirmText?: string;
+  onConfirm?: () => void;
+  showCancel?: boolean;
+}
+
+function InfoModal({ isOpen, onClose, title, message, icon = <Sparkles size={48} style={{ color: "#c49b4a", margin: "0 auto" }} />, confirmText = "Entendido", onConfirm, showCancel = false }: InfoModalProps) {
+  if (!isOpen) return null;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        backdropFilter: "blur(4px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 2000,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: "#18181b",
+          border: "1px solid #3f3f46",
+          borderRadius: "20px",
+          padding: "32px",
+          maxWidth: "400px",
+          width: "90%",
+          textAlign: "center",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>{icon}</div>
+        <h3 style={{ color: "white", fontSize: "20px", fontWeight: 800, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{title}</h3>
+        <p style={{ color: "#a1a1aa", fontSize: "14px", lineHeight: 1.6, marginBottom: "24px" }}>{message}</p>
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+          {showCancel && (
+            <button
+              onClick={onClose}
+              style={{
+                padding: "12px 24px",
+                borderRadius: "10px",
+                backgroundColor: "transparent",
+                border: "1px solid #3f3f46",
+                color: "#a1a1aa",
+                fontSize: "13px",
+                fontWeight: 700,
+                cursor: "pointer"
+              }}
+            >
+              Cancelar
+            </button>
+          )}
+          <button
+            onClick={() => {
+              if (onConfirm) onConfirm();
+              onClose();
+            }}
+            style={{
+              padding: "12px 24px",
+              borderRadius: "10px",
+              backgroundColor: "#c49b4a",
+              border: "none",
+              color: "black",
+              fontSize: "13px",
+              fontWeight: 800,
+              cursor: "pointer",
+              textTransform: "uppercase"
+            }}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Componente: campo de info ────────────────────────────────────────────────
 function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
@@ -117,6 +185,22 @@ export default function PerfilPage() {
     upcomingEvents: 0,
     daysActive: 0
   });
+
+  // Estado para el modal de información genérico
+  const [infoModal, setInfoModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    icon?: React.ReactNode;
+    onConfirm?: () => void;
+    showCancel?: boolean;
+    confirmText?: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -185,11 +269,21 @@ export default function PerfilPage() {
           }).catch(err => console.error("Error al borrar foto antigua:", err));
         }
 
-        alert("¡Foto actualizada!");
+        setInfoModal({
+          isOpen: true,
+          title: "¡Éxito!",
+          message: "Tu foto de perfil ha sido actualizada correctamente.",
+          icon: <CheckCircle2 size={48} style={{ color: "#c49b4a", margin: "0 auto" }} />
+        });
       }
     } catch (err) {
       console.error(err);
-      alert("No se pudo actualizar la foto.");
+      setInfoModal({
+        isOpen: true,
+        title: "Error",
+        message: "No se pudo actualizar la foto de perfil. Por favor, inténtalo de nuevo.",
+        icon: <AlertCircle size={48} style={{ color: "#f43f5e", margin: "0 auto" }} />
+      });
     } finally {
       setUploading(false);
     }
@@ -304,7 +398,7 @@ export default function PerfilPage() {
                   {localPhotoURL ? (
                     <Image src={localPhotoURL} alt="Foto" fill style={{ objectFit: "cover" }} unoptimized />
                   ) : (
-                    <span style={{ fontSize: 32 }}>👤</span>
+                    <UserIcon size={32} style={{ color: "rgba(255,255,255,0.3)" }} />
                   )}
                   {/* Overlay hover */}
                   <div className="group-avatar-overlay" style={{
@@ -316,7 +410,7 @@ export default function PerfilPage() {
                     onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
                     onMouseLeave={e => (e.currentTarget.style.opacity = "0")}
                   >
-                    <IconCamera />
+                    <Camera size={20} style={{ color: "white" }} />
                   </div>
                 </div>
               </div>
@@ -339,8 +433,8 @@ export default function PerfilPage() {
 
               {/* Nav */}
               <nav style={{ width: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
-                <NavItem icon={<IconUser />} label="Información" active />
-                <NavItem icon={<IconCalendar />} label="Mis eventos" onClick={() => router.push("/dashboard")} />
+                <NavItem icon={<UserIcon size={15} />} label="Información" active />
+                <NavItem icon={<Calendar size={15} />} label="Mis eventos" onClick={() => router.push("/dashboard")} />
               </nav>
             </div>
 
@@ -390,7 +484,7 @@ export default function PerfilPage() {
                 border: "1px solid rgba(196,155,74,0.15)",
               }}>
                 <span style={{ color: "rgba(196,155,74,0.6)", flexShrink: 0, marginTop: 1 }}>
-                  <IconInfo />
+                  <Info size={14} />
                 </span>
                 <p style={{ fontSize: 12, color: "rgba(196,155,74,0.7)", lineHeight: 1.65, margin: 0 }}>
                   <span style={{ fontWeight: 500, color: "rgba(196,155,74,0.9)" }}>Nota:</span>{" "}
@@ -404,6 +498,17 @@ export default function PerfilPage() {
       </main>
 
       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+
+      <InfoModal 
+        isOpen={infoModal.isOpen}
+        onClose={() => setInfoModal(prev => ({ ...prev, isOpen: false }))}
+        title={infoModal.title}
+        message={infoModal.message}
+        icon={infoModal.icon}
+        onConfirm={infoModal.onConfirm}
+        showCancel={infoModal.showCancel}
+        confirmText={infoModal.confirmText}
+      />
     </div>
   );
 }

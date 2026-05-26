@@ -6,16 +6,17 @@ import Image from "next/image";
 import { Invitation } from "@/lib/invitations/invitation.types";
 import SearchByCode from "@/components/search/SearchByCode";
 import { parseLocalDate } from "@/lib/date-utils";
+import { Cake, Gem, Plane, Utensils, Handshake, TreePine, Sparkles, Calendar, MapPin, Check, Users, Mail } from "lucide-react";
 
 // ─── Metadatos de categoría: icono y color de fondo del badge ────────────────
-const CATEGORY_META: Record<string, { icon: string; bg: string }> = {
-  cumpleaños: { icon: "🎂", bg: "#ec4899" },
-  boda: { icon: "💍", bg: "#f43f5e" },
-  viaje: { icon: "✈️", bg: "#0ea5e9" },
-  cena: { icon: "🍽", bg: "#f97316" },
-  reunión: { icon: "🤝", bg: "#8b5cf6" },
-  picnic: { icon: "🧺", bg: "#22c55e" },
-  default: { icon: "✦", bg: "#E0B046 " },
+const CATEGORY_META: Record<string, { icon: React.ComponentType<any>; bg: string }> = {
+  cumpleaños: { icon: Cake, bg: "#ec4899" },
+  boda: { icon: Gem, bg: "#f43f5e" },
+  viaje: { icon: Plane, bg: "#0ea5e9" },
+  cena: { icon: Utensils, bg: "#f97316" },
+  reunión: { icon: Handshake, bg: "#8b5cf6" },
+  picnic: { icon: TreePine, bg: "#22c55e" },
+  default: { icon: Sparkles, bg: "#E0B046 " },
 };
 
 const COVER_STYLES = [
@@ -72,22 +73,29 @@ function EventCard({ evento, index }: { evento: Invitation; index: number }) {
           
           <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10 }}>
             <span style={{ backgroundColor: cat.bg, color: "white", fontSize: "10px", fontWeight: 900, textTransform: "uppercase", padding: "4px 12px", borderRadius: "9999px", display: "flex", alignItems: "center", gap: "6px" }}>
-              {cat.icon} {categoryKey !== "default" ? categoryKey : "evento"}
+              <cat.icon size={12} style={{ color: "#E0B046" }} /> {categoryKey !== "default" ? categoryKey : "evento"}
             </span>
           </div>
 
-          <div style={{ position: "absolute", bottom: "16px", left: "16px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", padding: "6px 12px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)", zIndex: 10 }}>
-            <span style={{ color: "white", fontSize: "12px", fontWeight: 700 }}>📅 {dia} {mes}, {año}</span>
+          <div style={{ position: "absolute", bottom: "16px", left: "16px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", padding: "6px 12px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)", zIndex: 10, display: "flex", alignItems: "center", gap: "6px" }}>
+            <Calendar size={12} style={{ color: "#E0B046" }} />
+            <span style={{ color: "white", fontSize: "12px", fontWeight: 700 }}>{dia} {mes}, {año}</span>
           </div>
         </div>
 
         <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
           <h3 style={{ color: "white", fontSize: "17px", fontWeight: 900, margin: 0 }}>{evento.title}</h3>
-          <p style={{ color: "#a1a1aa", fontSize: "13px", margin: 0 }}>📍 {evento.location}</p>
+          <p style={{ color: "#a1a1aa", fontSize: "13px", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
+            <MapPin size={14} style={{ color: "#E0B046" }} /> {evento.location}
+          </p>
           <div style={{ borderTop: "1px solid #3f3f46" }} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ color: "#38bdf8", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>✓ Invitación Aceptada</span>
-            <span style={{ color: "#52525b", fontSize: "12px" }}>🖼 {evento.guestCount || 0} invitados</span>
+            <span style={{ color: "#38bdf8", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Check size={12} /> Invitación Aceptada
+            </span>
+            <span style={{ color: "#52525b", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Users size={14} style={{ color: "#71717a" }} /> {evento.guestCount || 0} invitados
+            </span>
           </div>
         </div>
       </div>
@@ -134,7 +142,7 @@ export default function InvitacionesParticipando() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "28px", alignItems: "start" }}>
         {eventos.length === 0 ? (
           <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 0", gap: "20px" }}>
-            <span style={{ fontSize: "64px" }}>✉️</span>
+            <Mail size={64} style={{ color: "#3f3f46" }} />
             <p style={{ color: "#71717a", fontSize: "14px", textAlign: "center", maxWidth: "300px", lineHeight: 1.6 }}>
               Aún no tienes invitaciones aceptadas. Usa un código arriba para unirte a un evento.
             </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import { Camera } from "lucide-react";
 
 interface PhotoUploadProps {
   eventId: string;
@@ -131,7 +132,7 @@ export default function PhotoUpload({ eventId, onUploadSuccess }: PhotoUploadPro
           </>
         ) : (
           <>
-            <span style={{ fontSize: "20px" }}>📸</span>
+            <Camera size={20} />
             Subir Fotos al Álbum
           </>
         )}

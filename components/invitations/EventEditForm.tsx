@@ -3,6 +3,19 @@
 import { useState, useRef } from "react";
 import { Invitation } from "@/lib/invitations/invitation.types";
 import Image from "next/image";
+import {
+  Cake,
+  Gem,
+  Plane,
+  Utensils,
+  Handshake,
+  TreePine,
+  Sparkles,
+  Image as ImageIcon,
+  RefreshCw,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 interface EventEditFormProps {
   event: Invitation;
@@ -12,13 +25,13 @@ interface EventEditFormProps {
 
 // Categorías disponibles para clasificar el evento
 const CATEGORIAS = [
-  { key: "boda", label: "Boda", icon: "💍" },
-  { key: "cumpleaños", label: "Cumpleaños", icon: "🎂" },
-  { key: "viaje", label: "Viaje", icon: "✈️" },
-  { key: "cena", label: "Cena", icon: "🍽" },
-  { key: "reunión", label: "Reunión", icon: "🤝" },
-  { key: "picnic", label: "Picnic", icon: "🧺" },
-  { key: "otro", label: "Otro", icon: "✦" },
+  { key: "boda", label: "Boda", icon: Gem },
+  { key: "cumpleaños", label: "Cumpleaños", icon: Cake },
+  { key: "viaje", label: "Viaje", icon: Plane },
+  { key: "cena", label: "Cena", icon: Utensils },
+  { key: "reunión", label: "Reunión", icon: Handshake },
+  { key: "picnic", label: "Picnic", icon: TreePine },
+  { key: "otro", label: "Otro", icon: Sparkles },
 ];
 
 export default function EventEditForm({ event, onSave, onCancel }: EventEditFormProps) {
@@ -145,7 +158,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
             />
           ) : (
             <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#52525b", gap: "12px" }}>
-              <span style={{ fontSize: "50px" }}>🖼️</span>
+              <ImageIcon size={48} style={{ color: "#3f3f46" }} />
               <p style={{ fontWeight: 800, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Sin foto de portada</p>
             </div>
           )}
@@ -184,7 +197,17 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
               onMouseLeave={e => e.currentTarget.style.borderColor = "#3f3f46"}
               disabled={loading || uploading}
             >
-              {formData.imageUrl ? "🔄 Cambiar Imagen" : "➕ Subir Imagen"}
+              {formData.imageUrl ? (
+                <>
+                  <RefreshCw size={14} />
+                  Cambiar Imagen
+                </>
+              ) : (
+                <>
+                  <Plus size={14} />
+                  Subir Imagen
+                </>
+              )}
             </button>
             
             {formData.imageUrl && (
@@ -198,13 +221,16 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
                   border: "1px solid rgba(244, 63, 94, 0.3)",
                   color: "#f43f5e",
                   cursor: "pointer",
-                  transition: "all 0.2s"
+                  transition: "all 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = "rgba(244, 63, 94, 0.2)"}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = "rgba(244, 63, 94, 0.1)"}
                 disabled={loading || uploading}
               >
-                🗑️
+                <Trash2 size={16} />
               </button>
             )}
           </div>
@@ -254,7 +280,7 @@ export default function EventEditForm({ event, onSave, onCancel }: EventEditForm
                     transition: "all 0.2s",
                   }}
                 >
-                  <span style={{ fontSize: "20px" }}>{cat.icon}</span>
+                  <cat.icon size={20} style={{ color: "#E0B046" }} />
                   {cat.label}
                 </button>
               ))}

@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/use-auth";
 import { auth } from "@/lib/firebase-client"; 
 import { signOut as firebaseSignOut } from "firebase/auth";
 import styles from "./PublicHeder.module.css";
+import { User } from "lucide-react";
 
 function PublicHeder() {
   const pathname = usePathname();
@@ -142,7 +143,7 @@ function PublicHeder() {
                     className={styles.avatarImage} 
                   />
                 ) : (
-                  "👤"
+                  <User size={16} style={{ color: "#a1a1aa" }} />
                 )}
               </div>
               {/* Nombre del usuario (displayName o parte del email) */}
@@ -164,7 +165,7 @@ function PublicHeder() {
                   className={styles.dropdownItem}
                   onClick={() => setShowUserMenu(false)}
                 >
-                  👤 Mi Perfil
+                  <User size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "6px" }} /> Mi Perfil
                 </Link>
                 {/* Botón para cerrar sesión */}
                 <button 
