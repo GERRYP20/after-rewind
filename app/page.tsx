@@ -4,6 +4,7 @@
 import React from "react";
 import Link from "next/link";
 import styles from "@/components/layout/PublicHeder.module.css";
+import CaptchaGate from "@/components/ui/CaptchaGate";
 import { useAuth } from "@/lib/use-auth";
 
 export default function Home() {
@@ -14,7 +15,8 @@ export default function Home() {
   const startLink = user ? "/dashboard" : "/login";
 
   return (
-    <main className={styles.mainWrapper}>
+    <CaptchaGate>
+      <main className={styles.mainWrapper}>
       {/* 1. SECCIÓN HERO */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
@@ -97,6 +99,7 @@ export default function Home() {
         </div>
       </section>
     </main>
+    </CaptchaGate>
   );
 }
 
