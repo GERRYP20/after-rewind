@@ -27,6 +27,7 @@ import GlassInput from "@/components/ui/GlassInput";
 import GlassButton from "@/components/ui/GlassButton";
 import GlassPasswordInput from "@/components/ui/GlassPasswordInput";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
+import SliderPuzzle, { SliderResult } from "@/components/ui/SliderPuzzle";
 import { useAuth } from "@/lib/use-auth";
 import React, { useState, Suspense, ChangeEvent, useEffect } from "react";
 import Link from "next/link";
@@ -47,6 +48,8 @@ function SignupForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [captcha, setCaptcha] = useState<SliderResult | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
   const { user, loading: authLoading } = useAuth();
   
   const router = useRouter();
@@ -77,6 +80,12 @@ function SignupForm() {
       return;
     }
 
+    // El desafío visual debe estar resuelto antes de crear la cuenta
+    if (!captcha?.solved) {
+      setErr("Resuelve el desafío de seguridad para continuar.");
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -91,10 +100,22 @@ function SignupForm() {
       const res = await fetch("/api/sessionLogin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken, remember: true }),
+        body: JSON.stringify({
+          idToken,
+          remember: true,
+          captchaToken: captcha.token,
+          captchaOffsetX: captcha.offsetX,
+          captchaOffsetY: captcha.offsetY,
+        }),
       });
 
-      if (!res.ok) throw new Error("Error al sincronizar la sesión");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setErr(data.error || "Error al sincronizar la sesión");
+        setCaptcha(null);
+        setCaptchaKey((k) => k + 1);
+        return;
+      }
 
       router.push("/dashboard");
       router.refresh();
@@ -176,6 +197,12 @@ function SignupForm() {
                   minLength={8}
                 />
 
+                {/* Desafío visual de seguridad (slider puzzle) */}
+                <SliderPuzzle
+                  onChange={setCaptcha}
+                  refreshKey={captchaKey}
+                />
+
                 {/* Mensaje de error */}
                 {err && (
                   <p className="text-sm text-red-400 bg-red-900/20 p-3 rounded-lg border border-red-900/30">
@@ -186,7 +213,7 @@ function SignupForm() {
                 {/* Botón de envío */}
                 <GlassButton 
                   type="submit" 
-                  disabled={loading}
+                  disabled={loading || !captcha?.solved}
                 >
                   {loading ? "Creando cuenta..." : "Registrarse"}
                 </GlassButton>

@@ -1,13 +1,52 @@
 import { adminAuth } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import {
+  getClientIp,
+  isBlocked,
+  registerFailure,
+  resetFailures,
+  verifySlider,
+} from "@/lib/captcha";
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    // Extraemos el ID Token enviado por el cliente (generado tras el login de Firebase)
-    const { idToken } = await request.json();
+    // Extraemos el ID Token y los datos del slider puzzle
+    const { idToken, captchaToken, captchaOffsetX, captchaOffsetY } =
+      await request.json();
+
+    // Identificamos al cliente para aplicar el bloqueo por intentos fallidos
+    const ip = getClientIp(request);
+
+    // 1. Si la IP está bloqueada, no procesamos nada
+    const block = isBlocked(ip);
+    if (block.blocked) {
+      return NextResponse.json(
+        { error: "Demasiados intentos fallidos. Espera un momento." },
+        { status: 429, headers: { "Retry-After": String(block.retryAfter) } }
+      );
+    }
+
+    // 2. Validamos el desafío visual antes de crear la sesión
+    const captcha = verifySlider(captchaToken, captchaOffsetX, captchaOffsetY);
+    if (!captcha.ok) {
+      const failure = registerFailure(ip);
+      if (failure.blocked) {
+        return NextResponse.json(
+          { error: "Demasiados intentos fallidos. Espera un momento." },
+          { status: 429, headers: { "Retry-After": String(failure.retryAfter) } }
+        );
+      }
+      return NextResponse.json(
+        { error: "Desafío de seguridad incorrecto." },
+        { status: 400 }
+      );
+    }
+
+    // Desafío resuelto: limpiamos el contador de fallos de esta IP
+    resetFailures(ip);
     
     // Definimos el tiempo de vida de la sesión (5 días)
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
