@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# entornos python / selenium
+selenium-bot/.venv/
+selenium-bot/**/*.png
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

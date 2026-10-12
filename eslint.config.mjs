@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Entorno Python del proyecto Selenium (el linter de JS no debe tocarlo):
+    "selenium-bot/.venv/**",
+    "selenium-bot/**/*.png",
   ]),
 ]);
 
