@@ -8,6 +8,7 @@ import {
   resetFailures,
   verifySlider,
 } from "@/lib/captcha";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
@@ -19,6 +20,16 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // Identificamos al cliente para aplicar el bloqueo por intentos fallidos
     const ip = getClientIp(request);
+
+    // 0. Rate limiting general: frena el intento de forzar la sesión por fuerza bruta
+    const resource = "/api/sessionLogin";
+    const rl = rateLimit(ip, resource, RATE_LIMITS[resource]);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas peticiones. Espera un momento." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+      );
+    }
 
     // 1. Si la IP está bloqueada, no procesamos nada
     const block = isBlocked(ip);

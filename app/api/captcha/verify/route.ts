@@ -14,6 +14,7 @@ import {
   resetFailures,
   verifySlider,
 } from "@/lib/captcha";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +27,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     const { captchaToken, captchaOffsetX, captchaOffsetY } = await request.json();
 
     const ip = getClientIp(request);
+
+    // 0. Rate limiting general: protege el endpoint de fuerza bruta
+    const resource = "/api/captcha/verify";
+    const rl = rateLimit(ip, resource, RATE_LIMITS[resource]);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas peticiones. Espera un momento." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+      );
+    }
 
     // 1. Si la IP está bloqueada, no procesamos nada
     const block = isBlocked(ip);
