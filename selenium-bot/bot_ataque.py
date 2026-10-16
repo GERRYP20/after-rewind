@@ -14,19 +14,13 @@ BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:3000").rstrip("/
 
 def crear_driver():
     opciones = Options()
-    # Quita esta línea si quieres ver la ventana del navegador
-    # opciones.add_argument("--headless=new")
     opciones.add_argument("--window-size=1280,800")
     driver = webdriver.Chrome(options=opciones)
     return driver
 
 
 def fetch_js(driver, metodo, url, body=None, timeout_ms=120000):
-    """
-    Ejecuta un fetch() dentro del contexto del navegador (mismo origin,
-    así que las cookies httpOnly como captcha_pass viajan solas).
-    Devuelve dict con: status, headers, text, json (si aplica).
-    """
+
     script = """
     const [metodo, url, bodyStr, callback] = arguments;
     const opts = {
