@@ -12,14 +12,26 @@ const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
 /**
  * GET: Obtiene una invitación por su ID
+ * Requiere sesión válida (Método 4: control de acceso) para que
+ * un bot anónimo no pueda extraer información de los eventos.
  */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 1. Verificar que el usuario tenga una sesión válida
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(COOKIE_NAME)?.value;
+
+    if (!sessionCookie) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    await adminAuth.verifySessionCookie(sessionCookie, false);
+
+    // 2. Busca la invitación por ID en la base de datos
     const { id } = await params;
-    // Busca la invitación por ID en la base de datos
     const invitation = await InvitationRepository.getById(id);
     
     if (!invitation) {

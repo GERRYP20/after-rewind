@@ -13,9 +13,22 @@ cloudinary.config({
 
 /**
  * POST: Sube un archivo a Cloudinary y retorna la URL
+ * Requiere que el usuario esté autenticado (Método 4: control de acceso).
  */
 export async function POST(request: NextRequest) {
   try {
+    // 1. Verificar que el usuario tenga una sesión válida
+    const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(COOKIE_NAME)?.value;
+
+    if (!sessionCookie) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    await adminAuth.verifySessionCookie(sessionCookie, false);
+
+    // 2. Recibir el archivo del FormData
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
