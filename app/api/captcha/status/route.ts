@@ -7,7 +7,7 @@
  */
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
-import { getClientIp } from "@/lib/captcha";
+import { getClientIp, verifyCaptchaPassCookie } from "@/lib/captcha";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -28,7 +28,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const cookieStore = await cookies();
-  const passed = cookieStore.get(COOKIE_NAME)?.value === "1";
+  const cookieValue = cookieStore.get(COOKIE_NAME)?.value;
+
+  // Método 5: verificamos firma HMAC y expiración de la cookie.
+  // Un valor fabricado (ej. "1") o manipulado ya no pasa como válido.
+  const passed = verifyCaptchaPassCookie(cookieValue);
+
+  // Si la cookie es inválida o vencida, la borramos para limpiar el estado
+  if (!passed && cookieValue) {
+    cookieStore.delete(COOKIE_NAME);
+  }
 
   return NextResponse.json(
     { passed },

@@ -177,6 +177,56 @@ export function verifySlider(
   }
 }
 
+// ─── Cookie de acceso firmada (Método 5: integridad HMAC) ──────────────────
+interface CaptchaPassPayload {
+  exp: number;
+}
+
+/**
+ * Crea el valor firmado para la cookie captcha_pass.
+ * Formato: base64url(payload).hmac-sha256 — el mismo patrón que el token
+ * del reto. Sin la firma correcta el valor es inútil.
+ */
+export function createCaptchaPassCookie(maxAgeSeconds: number): string {
+  const payload: CaptchaPassPayload = {
+    exp: Date.now() + maxAgeSeconds * 1000,
+  };
+  const body = toBase64Url(JSON.stringify(payload));
+  return `${body}.${sign(body)}`;
+}
+
+/**
+ * Verifica la integridad y expiración de la cookie captcha_pass.
+ * Comparación en tiempo constante (timingSafeEqual) para evitar
+ * ataques de timing sobre la firma. Devuelve false ante cualquier
+ * valor fabricado, manipulado o vencido.
+ */
+export function verifyCaptchaPassCookie(value: string | undefined): boolean {
+  try {
+    if (!value || typeof value !== "string") return false;
+
+    const [body, signature] = value.split(".");
+    if (!body || !signature) return false;
+
+    const expected = sign(body);
+    const provided = Buffer.from(signature);
+    const computed = Buffer.from(expected);
+    if (
+      provided.length !== computed.length ||
+      !crypto.timingSafeEqual(provided, computed)
+    ) {
+      return false;
+    }
+
+    const payload = JSON.parse(fromBase64Url(body)) as CaptchaPassPayload;
+    if (typeof payload.exp !== "number") return false;
+
+    return Date.now() <= payload.exp;
+  } catch {
+    return false;
+  }
+}
+
 // ─── Identificación del cliente ─────────────────────────────────────────────
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
