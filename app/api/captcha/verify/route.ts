@@ -8,6 +8,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
+  createCaptchaPassCookie,
   getClientIp,
   isBlocked,
   registerFailure,
@@ -67,8 +68,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     resetFailures(ip);
 
     // 3. Marcamos al visitante como verificado mediante cookie httpOnly
+    // firmada con HMAC (Método 5: integridad criptográfica). Un valor
+    // fabricado como "1" ya no pasa la verificación en /status.
     const cookieStore = await cookies();
-    cookieStore.set(COOKIE_NAME, "1", {
+    cookieStore.set(COOKIE_NAME, createCaptchaPassCookie(COOKIE_MAX_AGE), {
       maxAge: COOKIE_MAX_AGE,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
