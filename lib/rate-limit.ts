@@ -14,6 +14,7 @@
  *
  * NUNCA importar este archivo desde componentes cliente.
  */
+import { logSecurityEvent } from "./logger";
 
 export interface RateLimitOptions {
   limit: number; // peticiones permitidas dentro de la ventana
@@ -66,9 +67,18 @@ export function rateLimit(
 
   // Segundos que restan para que la ventana actual se reinicie
   const remainingMs = Math.max(0, state.windowStart + options.windowMs - now);
+  const allowed = state.count <= options.limit;
+
+  if (!allowed) {
+    logSecurityEvent("rate_limit_exceeded", ip, `Límite de peticiones excedido en ${resource}`, {
+      resource,
+      count: state.count,
+      limit: options.limit,
+    });
+  }
 
   return {
-    allowed: state.count <= options.limit,
+    allowed,
     retryAfter: remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0,
     count: state.count,
   };

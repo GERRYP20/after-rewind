@@ -9,6 +9,7 @@ import {
   verifySlider,
 } from "@/lib/captcha";
 import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { logSecurityEvent } from "@/lib/logger";
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
@@ -78,10 +79,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     console.log("Session cookie set with name:", COOKIE_NAME);
+    logSecurityEvent("login_success", ip, "Sesión iniciada correctamente");
 
     return NextResponse.json({ status: "success" }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Error desconocido";
+    logSecurityEvent("login_error", getClientIp(request), `Fallo al iniciar sesión: ${message}`);
     return NextResponse.json({ error: message }, { status: 401 });
   }
 }

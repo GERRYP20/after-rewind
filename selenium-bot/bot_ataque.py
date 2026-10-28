@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 # Consola de Windows: forzar UTF-8 para ver bien los acentos
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:3000").rstrip("/")
+BASE = (sys.argv[1] if len(sys.argv) > 1 else "https://after-rewind.vercel.app/").rstrip("/")
 
 
 def crear_driver():
