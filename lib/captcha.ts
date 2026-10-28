@@ -13,6 +13,7 @@
  * NUNCA importar este archivo desde componentes cliente.
  */
 import crypto from "node:crypto";
+import { logSecurityEvent } from "./logger";
 
 // ─── Dimensiones y tolerancias del puzzle ───────────────────────────────────
 export const PUZZLE = {
@@ -276,9 +277,19 @@ export function registerFailure(ip: string): {
   failures.set(ip, state);
 
   const remaining = state.blockedUntil - now;
+  const blocked = remaining > 0;
+
+  if (blocked) {
+    logSecurityEvent("login_blocked_attempts", ip, "IP bloqueada temporalmente por múltiples fallos de captcha", {
+      blockedForMs: remaining,
+    });
+  } else {
+    logSecurityEvent("captcha_failed", ip, "Captcha incorrecto en login", { count: state.count });
+  }
+
   return {
-    blocked: remaining > 0,
-    retryAfter: remaining > 0 ? Math.ceil(remaining / 1000) : 0,
+    blocked,
+    retryAfter: blocked ? Math.ceil(remaining / 1000) : 0,
     count: state.count,
   };
 }
