@@ -112,6 +112,15 @@ function LoginForm() {
     } catch (error: unknown) {
       console.error("Login Error:", error);
       setErr("El correo o la contraseña son incorrectos.");
+
+      // Firebase valida las credenciales en el cliente, así que este fallo
+      // nunca llega al servidor. Lo reportamos para que quede en los logs.
+      const code = error instanceof Error && "code" in error ? String((error as { code: string }).code) : "unknown";
+      fetch("/api/auth/log-failure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code }),
+      }).catch(() => {});
     } finally {
       setLoading(false);
     }
@@ -164,8 +173,15 @@ function LoginForm() {
 
       router.push(redirectTo);
       router.refresh();
-    } catch {
+    } catch (error: unknown) {
       setErr("Error al conectar con Google.");
+
+      const code = error instanceof Error && "code" in error ? String((error as { code: string }).code) : "unknown";
+      fetch("/api/auth/log-failure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "google-oauth", code }),
+      }).catch(() => {});
     } finally {
       setLoading(false);
     }

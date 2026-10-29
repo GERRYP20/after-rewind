@@ -28,6 +28,7 @@ export const RATE_LIMITS: Record<string, RateLimitOptions> = {
   "/api/captcha/status": { limit: 20, windowMs: 60_000 },
   "/api/captcha/verify": { limit: 5, windowMs: 60_000 },
   "/api/sessionLogin": { limit: 5, windowMs: 60_000 },
+  "/api/auth/log-failure": { limit: 10, windowMs: 60_000 },
 };
 
 interface WindowState {
