@@ -79,12 +79,18 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     console.log("Session cookie set with name:", COOKIE_NAME);
-    logSecurityEvent("login_success", ip, "Sesión iniciada correctamente");
+    logSecurityEvent("login_success", ip, "Sesión iniciada correctamente", undefined, 200);
 
     return NextResponse.json({ status: "success" }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Error desconocido";
-    logSecurityEvent("login_error", getClientIp(request), `Fallo al iniciar sesión: ${message}`);
+    logSecurityEvent(
+      "login_error",
+      getClientIp(request),
+      `Fallo al iniciar sesión: ${message}`,
+      undefined,
+      401
+    );
     return NextResponse.json({ error: message }, { status: 401 });
   }
 }

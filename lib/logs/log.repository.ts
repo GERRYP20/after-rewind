@@ -9,6 +9,7 @@ export interface CreateLogInput {
   ip: string;
   resource?: string;
   message: string;
+  statusCode?: number;
   meta?: Record<string, unknown>;
 }
 
@@ -55,6 +56,7 @@ function mapLog(doc: FirebaseFirestore.QueryDocumentSnapshot): LogEntry {
     ip: data.ip,
     resource: data.resource,
     message: data.message,
+    statusCode: data.statusCode,
     meta: data.meta,
     createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
   };

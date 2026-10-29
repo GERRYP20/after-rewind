@@ -14,6 +14,8 @@ import { cookies } from "next/headers";
 import { adminAuth, db } from "@/lib/firebase-admin";
 import { InvitationRepository } from "@/lib/invitations/invitation.repository";
 import { EventGuestRepository } from "@/lib/guests/event-guest.repository";
+import { getClientIp } from "@/lib/captcha";
+import { logSecurityEvent } from "@/lib/logger";
 
 // Nombre de la cookie de sesión
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
@@ -84,7 +86,15 @@ export async function POST(
       
       // Se usa una transacción para asegurar la consistencia del contador de invitados
       await createConfirmedGuestWithTransaction(event.id!, userId, userName, userPhoto);
-      
+
+      logSecurityEvent(
+        "guest_joined",
+        getClientIp(request),
+        `${userName} se unió al evento "${event.title}" (público, confirmado)`,
+        { eventId: event.id, userId, status: "confirmed" },
+        201
+      );
+
       return NextResponse.json({
         success: true,
         message: "Te has unido al evento correctamente",
@@ -93,7 +103,7 @@ export async function POST(
       });
     } else {
       // En eventos privados, se crea una solicitud que el anfitrión debe aprobar
-      
+
       await EventGuestRepository.create({
         eventId: event.id!,
         userId,
@@ -102,6 +112,14 @@ export async function POST(
         status: 'pending',
         createdAt: new Date().toISOString(),
       });
+
+      logSecurityEvent(
+        "guest_joined",
+        getClientIp(request),
+        `${userName} solicitó unirse al evento "${event.title}" (privado, pendiente de aprobación)`,
+        { eventId: event.id, userId, status: "pending" },
+        201
+      );
 
       return NextResponse.json({
         success: true,

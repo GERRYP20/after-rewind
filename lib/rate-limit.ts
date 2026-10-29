@@ -70,11 +70,13 @@ export function rateLimit(
   const allowed = state.count <= options.limit;
 
   if (!allowed) {
-    logSecurityEvent("rate_limit_exceeded", ip, `Límite de peticiones excedido en ${resource}`, {
-      resource,
-      count: state.count,
-      limit: options.limit,
-    });
+    logSecurityEvent(
+      "rate_limit_exceeded",
+      ip,
+      `Límite de peticiones excedido en ${resource} (intento ${state.count}/${options.limit})`,
+      { resource, count: state.count, limit: options.limit },
+      429
+    );
   }
 
   return {

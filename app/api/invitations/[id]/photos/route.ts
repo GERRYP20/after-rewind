@@ -9,6 +9,8 @@ import { adminAuth } from "@/lib/firebase-admin";
 import { InvitationRepository } from "@/lib/invitations/invitation.repository";
 import { EventGuestRepository } from "@/lib/guests/event-guest.repository";
 import { EventPhotoRepository } from "@/lib/photos/event-photo.repository";
+import { getClientIp } from "@/lib/captcha";
+import { logSecurityEvent } from "@/lib/logger";
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
@@ -96,6 +98,14 @@ export async function POST(
       userName,
       url
     });
+
+    logSecurityEvent(
+      "photo_uploaded",
+      getClientIp(request),
+      `Foto subida por ${userName} en evento ${eventId}`,
+      { eventId, userId, photoId },
+      201
+    );
 
     return NextResponse.json({ id: photoId, message: "Foto guardada con éxito" }, { status: 201 });
 
