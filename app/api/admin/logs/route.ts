@@ -15,6 +15,11 @@ const VALID_TYPES: LogEventType[] = [
   "captcha_failed",
   "login_success",
   "login_error",
+  "logout",
+  "event_created",
+  "comment_created",
+  "photo_uploaded",
+  "guest_joined",
 ];
 
 export async function GET(request: Request) {

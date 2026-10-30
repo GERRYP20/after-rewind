@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebase-admin";
 import { CommentRepository } from "@/lib/comments/comment.repository";
 import { Comment } from "@/lib/comments/comment.types";
+import { getClientIp } from "@/lib/captcha";
+import { logSecurityEvent } from "@/lib/logger";
 
 // Nombre de la cookie de sesión
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
@@ -96,6 +98,14 @@ export async function POST(
       userPhoto: userPhoto || undefined,
       text: text.trim(),
     });
+
+    logSecurityEvent(
+      "comment_created",
+      getClientIp(request),
+      `Comentario creado por ${userName} en evento ${eventId}`,
+      { eventId, userId, commentId },
+      201
+    );
 
     return NextResponse.json({ id: commentId, message: "Comentario creado" }, { status: 201 });
   } catch (error: unknown) {

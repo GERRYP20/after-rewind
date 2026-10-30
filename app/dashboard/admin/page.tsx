@@ -9,6 +9,7 @@ interface LogEntry {
   ip: string;
   resource?: string;
   message: string;
+  statusCode?: number;
   meta?: Record<string, unknown>;
   createdAt: string;
 }
@@ -20,6 +21,11 @@ const TYPE_FILTERS: { value: string; label: string }[] = [
   { value: "captcha_failed", label: "Captcha fallido" },
   { value: "login_success", label: "Login exitoso" },
   { value: "login_error", label: "Error de login" },
+  { value: "logout", label: "Cierre de sesión" },
+  { value: "event_created", label: "Evento creado" },
+  { value: "comment_created", label: "Comentario creado" },
+  { value: "photo_uploaded", label: "Foto subida" },
+  { value: "guest_joined", label: "Usuario se unió a evento" },
 ];
 
 const TYPE_COLORS: Record<string, string> = {
@@ -28,6 +34,11 @@ const TYPE_COLORS: Record<string, string> = {
   captcha_failed: "#f97316",
   login_success: "#22c55e",
   login_error: "#ef4444",
+  logout: "#38bdf8",
+  event_created: "#60a5fa",
+  comment_created: "#a78bfa",
+  photo_uploaded: "#2dd4bf",
+  guest_joined: "#eab308",
 };
 
 export default function AdminLogsPage() {
@@ -55,7 +66,7 @@ export default function AdminLogsPage() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 15_000);
+    const interval = setInterval(load, 5_000);
     return () => clearInterval(interval);
   }, [load]);
 
@@ -81,7 +92,7 @@ export default function AdminLogsPage() {
   }
 
   return (
-    <div style={{ paddingTop: "clamp(8rem, 12vw, 10rem)", paddingBottom: "4rem", maxWidth: "1100px", margin: "0 auto", padding: "0 24px" }}>
+    <div style={{ paddingTop: "clamp(10rem, 15vw, 12rem)", paddingBottom: "4rem", maxWidth: "1100px", margin: "0 auto", paddingLeft: "24px", paddingRight: "24px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <ShieldAlert color="#E0B046" size={22} />
@@ -139,6 +150,7 @@ export default function AdminLogsPage() {
               <tr style={{ backgroundColor: "#18181b", textAlign: "left", color: "#a1a1aa", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: "10.5px" }}>
                 <th style={{ padding: "12px 16px" }}>Fecha</th>
                 <th style={{ padding: "12px 16px" }}>Tipo</th>
+                <th style={{ padding: "12px 16px" }}>Código</th>
                 <th style={{ padding: "12px 16px" }}>IP</th>
                 <th style={{ padding: "12px 16px" }}>Mensaje</th>
               </tr>
@@ -160,6 +172,9 @@ export default function AdminLogsPage() {
                     >
                       {log.type}
                     </span>
+                  </td>
+                  <td style={{ padding: "10px 16px", color: "#a1a1aa", fontFamily: "monospace" }}>
+                    {log.statusCode ?? "—"}
                   </td>
                   <td style={{ padding: "10px 16px", color: "#e4e4e7", fontFamily: "monospace" }}>{log.ip}</td>
                   <td style={{ padding: "10px 16px", color: "#d4d4d8" }}>{log.message}</td>

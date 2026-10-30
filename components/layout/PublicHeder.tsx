@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation"; 
@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/use-auth";
 import { auth } from "@/lib/firebase-client"; 
 import { signOut as firebaseSignOut } from "firebase/auth";
 import styles from "./PublicHeder.module.css";
-import { User } from "lucide-react";
+import { User, ShieldAlert } from "lucide-react";
 
 function PublicHeder() {
   const pathname = usePathname();
@@ -18,6 +18,19 @@ function PublicHeder() {
   const [deletingAccount, setDeletingAccount] = useState(false);
   // Estado para controlar la visibilidad del menú desplegable del usuario
   const [showUserMenu, setShowUserMenu] = useState(false);
+  // Solo se muestra el enlace al panel de admin si el servidor confirma el rol
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    fetch("/api/admin/check")
+      .then((res) => (res.ok ? res.json() : { isAdmin: false }))
+      .then((data) => setIsAdmin(Boolean(data.isAdmin)))
+      .catch(() => setIsAdmin(false));
+  }, [user]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -108,13 +121,23 @@ function PublicHeder() {
               </Link>
             </li>
             <li>
-              <Link 
-                href="/dashboard/invitaciones/participando" 
+              <Link
+                href="/dashboard/invitaciones/participando"
                 className={pathname === "/dashboard/invitaciones/participando" ? styles.activeLink : ""}
               >
                 Invitaciones
               </Link>
             </li>
+            {isAdmin && (
+              <li>
+                <Link
+                  href="/dashboard/admin"
+                  className={pathname === "/dashboard/admin" ? styles.activeLink : ""}
+                >
+                  <ShieldAlert size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} /> Admin
+                </Link>
+              </li>
+            )}
           </ul>
         )}
         

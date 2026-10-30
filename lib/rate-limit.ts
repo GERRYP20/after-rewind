@@ -28,6 +28,7 @@ export const RATE_LIMITS: Record<string, RateLimitOptions> = {
   "/api/captcha/status": { limit: 20, windowMs: 60_000 },
   "/api/captcha/verify": { limit: 5, windowMs: 60_000 },
   "/api/sessionLogin": { limit: 5, windowMs: 60_000 },
+  "/api/auth/log-failure": { limit: 10, windowMs: 60_000 },
 };
 
 interface WindowState {
@@ -70,11 +71,13 @@ export function rateLimit(
   const allowed = state.count <= options.limit;
 
   if (!allowed) {
-    logSecurityEvent("rate_limit_exceeded", ip, `Límite de peticiones excedido en ${resource}`, {
-      resource,
-      count: state.count,
-      limit: options.limit,
-    });
+    logSecurityEvent(
+      "rate_limit_exceeded",
+      ip,
+      `Límite de peticiones excedido en ${resource} (intento ${state.count}/${options.limit})`,
+      { resource, count: state.count, limit: options.limit },
+      429
+    );
   }
 
   return {

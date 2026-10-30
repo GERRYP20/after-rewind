@@ -280,11 +280,21 @@ export function registerFailure(ip: string): {
   const blocked = remaining > 0;
 
   if (blocked) {
-    logSecurityEvent("login_blocked_attempts", ip, "IP bloqueada temporalmente por múltiples fallos de captcha", {
-      blockedForMs: remaining,
-    });
+    logSecurityEvent(
+      "login_blocked_attempts",
+      ip,
+      `IP bloqueada temporalmente por múltiples fallos de captcha (bloqueada ${Math.ceil(remaining / 1000)}s)`,
+      { blockedForMs: remaining },
+      429
+    );
   } else {
-    logSecurityEvent("captcha_failed", ip, "Captcha incorrecto en login", { count: state.count });
+    logSecurityEvent(
+      "captcha_failed",
+      ip,
+      `Captcha incorrecto en login (intento ${state.count}/${MAX_FAILURES})`,
+      { count: state.count },
+      400
+    );
   }
 
   return {

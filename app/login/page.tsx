@@ -30,6 +30,7 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signOut as firebaseSignOut,
 } from "firebase/auth";
 
 /**
@@ -52,12 +53,39 @@ function LoginForm() {
 
   const redirectTo = searchParams.get("redirectTo") || "/dashboard";
 
-  // Redirigir al dashboard si el usuario ya está logueado
+  // Redirigir al dashboard si el usuario ya está logueado.
+  // Firebase guarda su propio estado de sesión en el cliente (IndexedDB),
+  // que puede quedar desincronizado de la cookie httpOnly que valida el
+  // servidor (ej. si el login con Google resuelve en el cliente pero la
+  // petición que crea la cookie nunca termina). Si confiáramos solo en el
+  // estado de Firebase, /dashboard rebotaría a este usuario de vuelta aquí
+  // (vía proxy.ts) en un loop infinito. Por eso verificamos con el servidor
+  // antes de redirigir, y si están desincronizados cerramos sesión en el
+  // cliente para romper el loop y dejar el formulario listo para reintentar.
   useEffect(() => {
-    if (!authLoading && user) {
-      router.push(redirectTo);
-    }
-  }, [user, authLoading, router, redirectTo]);
+    if (authLoading || !user || loading) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/session", { cache: "no-store" });
+        const data = await res.json().catch(() => ({ authenticated: false }));
+        if (cancelled) return;
+
+        if (data.authenticated) {
+          router.push(redirectTo);
+        } else {
+          await firebaseSignOut(auth);
+        }
+      } catch {
+        // Fallo de red: no hacemos nada, el usuario se queda en el login.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, authLoading, loading, router, redirectTo]);
 
   /**
    * handleLogin - Login con email y contraseña
@@ -107,11 +135,19 @@ function LoginForm() {
         return;
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      window.location.href = redirectTo;
     } catch (error: unknown) {
       console.error("Login Error:", error);
       setErr("El correo o la contraseña son incorrectos.");
+
+      // Firebase valida las credenciales en el cliente, así que este fallo
+      // nunca llega al servidor. Lo reportamos para que quede en los logs.
+      const code = error instanceof Error && "code" in error ? String((error as { code: string }).code) : "unknown";
+      fetch("/api/auth/log-failure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code }),
+      }).catch(() => {});
     } finally {
       setLoading(false);
     }
@@ -162,10 +198,16 @@ function LoginForm() {
         return;
       }
 
-      router.push(redirectTo);
-      router.refresh();
-    } catch {
+      window.location.href = redirectTo;
+    } catch (error: unknown) {
       setErr("Error al conectar con Google.");
+
+      const code = error instanceof Error && "code" in error ? String((error as { code: string }).code) : "unknown";
+      fetch("/api/auth/log-failure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "google-oauth", code }),
+      }).catch(() => {});
     } finally {
       setLoading(false);
     }

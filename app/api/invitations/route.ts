@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { adminAuth } from "@/lib/firebase-admin";
 import { InvitationRepository } from "@/lib/invitations/invitation.repository";
 import { Invitation } from "@/lib/invitations/invitation.types";
+import { getClientIp } from "@/lib/captcha";
+import { logSecurityEvent } from "@/lib/logger";
 
 const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "session";
 
@@ -79,6 +81,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       guestCount: 0, // Inicializar contador de invitados en 0
       imageUrl: imageUrl || "", // Guardamos la URL de la imagen de portada
     });
+
+    logSecurityEvent(
+      "event_created",
+      getClientIp(request),
+      `Evento creado: "${title}" por usuario ${userId}`,
+      { invitationId, userId, category: category || "otro" },
+      201
+    );
 
     return NextResponse.json({ id: invitationId, message: "Invitación creada" }, { status: 201 });
   } catch (error: unknown) {

@@ -15,13 +15,16 @@ export function logSecurityEvent(
   type: LogEventType,
   ip: string,
   message: string,
-  meta?: Record<string, unknown>
+  meta?: Record<string, unknown>,
+  statusCode?: number
 ): void {
   // Log inmediato en consola: lo capturan los Runtime Logs de Vercel
-  console.log(JSON.stringify({ level: "security", type, ip, message, meta, at: new Date().toISOString() }));
+  console.log(
+    JSON.stringify({ level: "security", type, ip, message, statusCode, meta, at: new Date().toISOString() })
+  );
 
   // Persistencia en Firestore sin bloquear la respuesta al cliente
-  LogRepository.create({ type, ip, message, meta }).catch((error) => {
+  LogRepository.create({ type, ip, message, statusCode, meta }).catch((error) => {
     console.error("No se pudo persistir el log de seguridad en Firestore:", error);
   });
 }
