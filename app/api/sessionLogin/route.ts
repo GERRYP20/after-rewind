@@ -79,7 +79,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     console.log("Session cookie set with name:", COOKIE_NAME);
-    logSecurityEvent("login_success", ip, "Sesión iniciada correctamente", undefined, 200);
+
+    // Decodificamos la cookie recién creada solo para identificar al usuario en el log
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie);
+    logSecurityEvent(
+      "login_success",
+      ip,
+      decoded.email ? `Sesión iniciada por ${decoded.email}` : "Sesión iniciada correctamente",
+      decoded.email ? { email: decoded.email } : undefined,
+      200
+    );
 
     return NextResponse.json({ status: "success" }, { status: 200 });
   } catch (error: unknown) {

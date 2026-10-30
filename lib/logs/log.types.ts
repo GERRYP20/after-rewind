@@ -6,6 +6,7 @@ export type LogEventType =
   | "captcha_failed"
   | "login_success"
   | "login_error"
+  | "logout"
   | "event_created"
   | "comment_created"
   | "photo_uploaded"
